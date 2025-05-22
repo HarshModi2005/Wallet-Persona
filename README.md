@@ -11,6 +11,18 @@ A blockchain wallet analysis tool that generates detailed on-chain "personas" fo
 - Personalized recommendations
 - AI-generated wallet bios
 
+## NEW: AI-Enhanced Analysis with Gemini
+
+This project now features Gemini AI integration for more sophisticated wallet analysis, providing:
+
+- More accurate trading behavior assessment
+- Detailed risk factor identification
+- Personalized token recommendations based on wallet activity
+- AI-generated wallet bios that capture on-chain persona
+- Contextual dApp recommendations
+
+For setup instructions, see [GEMINI_SETUP.md](./GEMINI_SETUP.md)
+
 ## Project Structure
 
 This project consists of two parts:
@@ -30,6 +42,7 @@ This project consists of two parts:
    ```
    MORALIS_API_KEY=your_moralis_api_key_here
    PORT=3001
+   GEMINI_API_KEY=your_gemini_api_key_here  # Optional, for AI features
    ```
 
 3. Run the development server:
@@ -75,13 +88,14 @@ This project consists of two parts:
   - TypeScript
   - Moralis API
   - Ethereum RPC
+  - Google Gemini AI API
 
 - **Frontend**:
   - React.js
-  - TypeScript
+  - JavaScript
   - Bootstrap/React-Bootstrap
   - Chart.js for visualizations
-  - React Icons
+  - FontAwesome for icons
 
 ## License
 

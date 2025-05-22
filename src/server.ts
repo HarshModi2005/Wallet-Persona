@@ -21,6 +21,16 @@ app.use(cors({
 app.use(express.json());
 app.use(morgan('dev'));
 
+// Check if environment variables are set
+if (!process.env.MORALIS_API_KEY) {
+  console.warn('Warning: MORALIS_API_KEY not set in .env file, using default key');
+}
+
+if (!process.env.GEMINI_API_KEY) {
+  console.warn('Warning: GEMINI_API_KEY not set in .env file. AI features will be limited.');
+  console.warn('Set GEMINI_API_KEY in .env file to enable advanced AI analysis features.');
+}
+
 // Simple test endpoint
 app.get('/api/test', (req, res) => {
   res.json({ message: 'API is working!' });
@@ -48,22 +58,29 @@ app.post('/api/analyze-wallet', async (req, res) => {
     const walletService = new WalletService(apiKey, rpcUrl);
     const personaService = new WalletPersonaService();
     
-    // Fetch wallet details
-    const details = await walletService.getWalletDetails(address);
-    
-    // Generate persona
-    const persona = personaService.generatePersona(details);
-    
-    // Combine and return the data
-    res.json({
-      success: true,
-      address,
-      details,
-      persona
-    });
-    
+    try {
+      // Fetch wallet details
+      const details = await walletService.getWalletDetails(address);
+      
+      // Generate persona with AI enhancement
+      const persona = await personaService.generatePersona(details);
+      
+      // Combine and return the data
+      res.json({
+        success: true,
+        address,
+        details,
+        persona
+      });
+    } catch (serviceError) {
+      console.error('Service error analyzing wallet:', serviceError);
+      res.status(500).json({ 
+        error: 'Failed to analyze wallet data',
+        message: serviceError instanceof Error ? serviceError.message : 'Unknown service error'
+      });
+    }
   } catch (error) {
-    console.error('Error analyzing wallet:', error);
+    console.error('General error analyzing wallet:', error);
     res.status(500).json({ 
       error: 'Failed to analyze wallet',
       message: error instanceof Error ? error.message : 'Unknown error'
@@ -74,4 +91,5 @@ app.post('/api/analyze-wallet', async (req, res) => {
 // Start the server
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
+  console.log(`API enhanced with Gemini AI for wallet analysis${process.env.GEMINI_API_KEY ? '' : ' (Not configured)'}`);
 }); 

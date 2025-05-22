@@ -1,4 +1,5 @@
 import { WalletDetails, Transaction, TokenBalance, NFT } from '../types/wallet.types';
+import { GeminiAIService } from './GeminiAIService';
 
 export interface WalletPersona {
   category: string[];  // investor, collector, trader, DAO member, etc.
@@ -29,11 +30,127 @@ export interface WalletPersona {
 }
 
 export class WalletPersonaService {
-  
+  private aiService: GeminiAIService;
+
+  constructor() {
+    this.aiService = new GeminiAIService();
+  }
+
+  async generatePersona(walletDetails: any): Promise<any> {
+    try {
+      // Prepare transaction data for analysis
+      const transactions = walletDetails.transactions || {
+        inflow: [0.5, 0.2, 0.3, 0.6, 0.9, 0.4],
+        outflow: [0.1, 0.1, 0.15, 0.1, 0.3, 0.15],
+        months: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"]
+      };
+      
+      // Use AI to analyze transactions and generate insights
+      const aiAnalysis = await this.aiService.analyzeTransactions(
+        transactions, 
+        walletDetails.balance || '0'
+      );
+      
+      // Get personalized token and dApp recommendations
+      const recommendations = await this.aiService.generateRecommendations({
+        assets: walletDetails.assets || {},
+        tradingProfile: aiAnalysis.tradingProfile,
+        activityLevel: aiAnalysis.activityLevel
+      });
+
+      // Format recommendations in the expected shape
+      const formattedRecommendations = {
+        tokens: recommendations.tokens.map((token: any) => token.symbol),
+        apps: recommendations.dapps.map((dapp: any) => dapp.name)
+      };
+
+      // Return complete persona with all components
+      return {
+        category: this.determineWalletCategory(aiAnalysis),
+        tags: this.generateWalletTags(aiAnalysis, walletDetails),
+        bio: aiAnalysis.bio,
+        riskScore: aiAnalysis.riskAssessment.score,
+        riskFactors: aiAnalysis.riskAssessment.factors,
+        activityLevel: aiAnalysis.activityLevel,
+        tradingFrequency: aiAnalysis.tradingProfile === 'Frequent' ? 'High' : 
+                         aiAnalysis.tradingProfile === 'Regular' ? 'Medium' : 'Low',
+        recommendations: formattedRecommendations
+      };
+    } catch (error) {
+      console.error('Error generating wallet persona:', error);
+      return this.getFallbackPersona(walletDetails);
+    }
+  }
+
+  private determineWalletCategory(analysis: any): string {
+    // Determine primary category based on AI analysis
+    const activityLevel = analysis.activityLevel;
+    const tradingProfile = analysis.tradingProfile;
+    
+    if (activityLevel === 'Very Active' && tradingProfile === 'Frequent') {
+      return 'Active Trader';
+    } else if (tradingProfile === 'Regular' || tradingProfile === 'Frequent') {
+      return 'DeFi Investor';
+    } else if (activityLevel === 'Casual') {
+      return 'Blockchain Explorer';
+    } else {
+      return 'Casual Holder';
+    }
+  }
+
+  private generateWalletTags(analysis: any, walletDetails: any): string[] {
+    const tags: string[] = [];
+    
+    // Add activity level tag
+    tags.push(analysis.activityLevel);
+    
+    // Add balance-based tag
+    const balance = parseFloat(walletDetails.balance || '0');
+    if (balance < 0.01) {
+      tags.push('Low Balance');
+    } else if (balance > 1) {
+      tags.push('High Balance');
+    } else {
+      tags.push('Medium Balance');
+    }
+    
+    // Add risk-based tag
+    if (analysis.riskAssessment.level === 'High') {
+      tags.push('High Risk');
+    }
+    
+    // Add trading behavior tag
+    if (analysis.tradingProfile === 'Frequent') {
+      tags.push('Active Trader');
+    }
+    
+    return tags;
+  }
+
+  private getFallbackPersona(walletDetails: any): any {
+    // Default persona when AI analysis fails
+    const balance = parseFloat(walletDetails.balance || '0');
+    const isLowBalance = balance < 0.01;
+    
+    return {
+      category: 'Blockchain Explorer',
+      tags: ['Casual', isLowBalance ? 'Low Balance' : 'Medium Balance'],
+      bio: 'A blockchain explorer venturing through the Ethereum ecosystem. Casual on the network. Frequently interacts with DeFi protocols.',
+      riskScore: 50,
+      riskFactors: ['Moderate wallet age', 'Some interaction with unverified tokens'],
+      activityLevel: 'Casual',
+      tradingFrequency: 'Low',
+      recommendations: {
+        tokens: ['ETH', 'LINK', 'UNI', 'ARB', 'MATIC'],
+        apps: ['Uniswap', 'OpenSea', 'Lido', 'Aave']
+      }
+    };
+  }
+
   /**
    * Generate a complete wallet persona based on wallet details
    */
-  public generatePersona(walletDetails: WalletDetails): WalletPersona {
+  public generatePersonaOld(walletDetails: WalletDetails): WalletPersona {
     const category = this.determineCategory(walletDetails);
     const riskScore = this.calculateRiskScore(walletDetails);
     const activeLevel = this.determineActivityLevel(walletDetails.transactions);

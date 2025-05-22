@@ -1,0 +1,289 @@
+.container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+h1 {
+  color: #333;
+  margin-bottom: 2rem;
+}
+
+.card {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+
+.card-header {
+  padding: 15px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+}
+
+.card-header h2 {
+  margin: 0;
+  font-size: 18px;
+  color: white;
+}
+
+.card-header i {
+  margin-right: 10px;
+  font-size: 18px;
+}
+
+.wallet-profile-header {
+  background-color: #4285f4;
+}
+
+.activity-metrics-header {
+  background-color: #45c1de;
+}
+
+.categories-header {
+  background-color: #3d8c40;
+}
+
+.risk-header {
+  background-color: #d9534f;
+}
+
+.asset-header {
+  background-color: #f0ad4e;
+}
+
+.recommendations-header {
+  background-color: #4285f4;
+}
+
+.address-section {
+  padding: 15px;
+  border-bottom: 1px solid #eee;
+}
+
+.address-label {
+  font-size: 14px;
+  color: #777;
+  margin-bottom: 5px;
+}
+
+.address-value {
+  font-family: monospace;
+  word-break: break-all;
+}
+
+.balance-section {
+  padding: 15px;
+  border-bottom: 1px solid #eee;
+}
+
+.balance-amount {
+  font-size: 16px;
+  font-weight: bold;
+  color: #28a745;
+  display: flex;
+  align-items: center;
+}
+
+.balance-amount i {
+  margin-right: 8px;
+}
+
+.wallet-age {
+  padding: 15px;
+  display: flex;
+  align-items: center;
+}
+
+.wallet-age i {
+  margin-right: 8px;
+  color: #4285f4;
+}
+
+.persona-summary {
+  padding: 15px;
+  font-style: italic;
+  background-color: #f9f9f9;
+  color: #555;
+}
+
+.categories-section {
+  padding: 15px;
+}
+
+.tag-container {
+  margin-top: 15px;
+}
+
+.tag {
+  display: inline-block;
+  padding: 5px 10px;
+  background-color: #f0f0f0;
+  border-radius: 15px;
+  margin-right: 5px;
+  margin-bottom: 5px;
+  font-size: 13px;
+}
+
+.tag.active {
+  background-color: #4285f4;
+  color: white;
+}
+
+.tag.balance {
+  background-color: #f0ad4e;
+  color: white;
+}
+
+.risk-section {
+  padding: 15px;
+}
+
+.risk-score {
+  font-size: 18px;
+  font-weight: bold;
+  text-align: right;
+  margin-bottom: 10px;
+}
+
+.risk-bar {
+  height: 15px;
+  background-color: #f5f5f5;
+  border-radius: 5px;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+
+.risk-level {
+  height: 100%;
+  background: linear-gradient(90deg, #ffdd78 0%, #f0ad4e 100%);
+}
+
+.risk-label {
+  text-align: center;
+  background-color: #fff7e0;
+  padding: 10px;
+  font-weight: bold;
+  color: #f0ad4e;
+  margin-bottom: 15px;
+}
+
+.risk-factors {
+  font-size: 14px;
+}
+
+.risk-factors ul {
+  margin-top: 10px;
+  padding-left: 25px;
+}
+
+.activity-metrics {
+  padding: 15px;
+}
+
+.chart-container {
+  height: 200px;
+  position: relative;
+  margin-bottom: 20px;
+}
+
+.chart-title {
+  font-size: 14px;
+  font-weight: bold;
+  color: #555;
+  margin-bottom: 10px;
+}
+
+#transaction-chart {
+  background-color: #fff;
+  border-radius: 5px;
+}
+
+.metrics-details {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.metric-item {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+}
+
+.asset-distribution {
+  padding: 15px;
+}
+
+.donut-chart {
+  width: 200px;
+  height: 200px;
+  margin: 0 auto;
+}
+
+.tokens-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 15px;
+}
+
+.token-badge {
+  padding: 5px 10px;
+  border-radius: 15px;
+  background-color: #f5f5f5;
+  font-size: 13px;
+  border: 1px solid #ddd;
+}
+
+.recommendations {
+  padding: 15px;
+}
+
+.recommendation-type {
+  font-size: 15px;
+  font-weight: bold;
+  margin-bottom: 10px;
+  color: #4285f4;
+}
+
+.tokens-to-explore {
+  margin-bottom: 20px;
+}
+
+.tokens-list {
+  margin-top: 5px;
+}
+
+.recommended-apps {
+  margin-bottom: 10px;
+}
+
+.app-list {
+  list-style-type: none;
+  padding: 0;
+}
+
+.app-item {
+  padding: 8px 0;
+  border-bottom: 1px solid #eee;
+}
+
+.app-item:last-child {
+  border-bottom: none;
+}
+
+@media (min-width: 768px) {
+  .dashboard-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+  
+  .full-width {
+    grid-column: 1 / 3;
+  }
+} 
