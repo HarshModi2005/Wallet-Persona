@@ -1,0 +1,104 @@
+.basic-wallet-info-container {
+    /* Using the --bs-body-bg variable for background to match Bootstrap theme */
+    /* Alternatively, a specific color like #f8f9fa or a subtle gradient */
+}
+
+.stat-card {
+    background-color: rgba(255, 255, 255, 0.05);
+    /* Subtle dark card background */
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0.5rem;
+    /* Standard Bootstrap card border-radius */
+    color: #e9ecef;
+    /* Light text color for dark background */
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    display: flex;
+    flex-direction: column;
+    /* Ensure card content stacks vertically */
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.stat-card .card-header {
+    background-color: rgba(255, 255, 255, 0.1);
+    /* Slightly lighter header */
+    color: #ffffff;
+    font-weight: bold;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+    padding: 0.75rem 1.25rem;
+    border-top-left-radius: calc(0.5rem - 1px);
+    border-top-right-radius: calc(0.5rem - 1px);
+}
+
+.stat-card .card-body {
+    padding: 1.25rem;
+    flex-grow: 1;
+    /* Allow body to take available space */
+}
+
+.stat-card .card-body p {
+    margin-bottom: 0.75rem;
+    font-size: 0.95rem;
+}
+
+.stat-card .card-body p strong {
+    color: #adb5bd;
+    /* Lighter color for labels */
+    margin-right: 0.5em;
+}
+
+.stat-card .card-body hr {
+    border-color: rgba(255, 255, 255, 0.15);
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+}
+
+.address-text {
+    font-family: 'Courier New', Courier, monospace;
+    /* Monospace for address */
+    word-break: break-all;
+    /* Prevent long addresses from breaking layout */
+}
+
+.copy-btn,
+.copy-btn:hover,
+.copy-btn:focus {
+    padding: 0.2rem 0.4rem;
+    font-size: 0.8rem;
+    color: #adb5bd;
+    border-color: #adb5bd;
+}
+
+.copy-btn:hover {
+    color: #ffffff;
+    border-color: #ffffff;
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Ensure consistent card height in a row for md and up */
+@media (min-width: 768px) {
+    .basic-wallet-info-container .row {
+        display: flex;
+    }
+
+    .basic-wallet-info-container .col-md-6,
+    .basic-wallet-info-container .col-lg-4 {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .stat-card {
+        flex-grow: 1;
+        /* Make cards in the same row take equal height */
+    }
+}
+
+.basic-wallet-info-loading {
+    color: white;
+    text-align: center;
+    padding: 2rem;
+    font-style: italic;
+}

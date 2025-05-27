@@ -1,0 +1,199 @@
+.main-persona-section {
+    display: flex;
+    flex-direction: row;
+    /* Arrange children side-by-side */
+    align-items: center;
+    /* Vertically align items in the center */
+    justify-content: center;
+    /* Horizontally center the two main columns */
+    width: 100%;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    padding: 2rem;
+    box-sizing: border-box;
+    overflow: hidden;
+    /* Prevent scrollbars if content overflows slightly during transitions */
+}
+
+.persona-avatar-wrapper {
+    flex: 0 0 30%;
+    /* Takes up 30% of the width, doesn't grow or shrink */
+    max-width: 30%;
+    height: 80vh;
+    /* 80% of the viewport height */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding-right: 2rem;
+    /* Space between image and text */
+    box-sizing: border-box;
+}
+
+.persona-avatar-image {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    /* Scales while maintaining aspect ratio, fitting within bounds */
+    border-radius: 15px;
+    /* Optional: slightly rounded corners for the image */
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    opacity: 0;
+    transform: translateX(-50px);
+    /* Start off-screen or offset */
+    animation: slideInAvatar 0.8s 0.3s ease-out forwards;
+}
+
+.avatar-placeholder-main {
+    width: 100%;
+    height: 100%;
+    background-color: rgba(255, 255, 255, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 1.5rem;
+    border-radius: 15px;
+    border: 2px dashed rgba(255, 255, 255, 0.5);
+}
+
+.persona-info-wrapper {
+    flex: 1;
+    /* Takes up the remaining space */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    /* Vertically center content within this column */
+    padding-left: 2rem;
+    color: white;
+    opacity: 0;
+    transform: translateX(50px);
+    /* Start off-screen or offset */
+    animation: slideInInfo 0.8s 0.5s ease-out forwards;
+}
+
+.persona-title {
+    font-size: 3.5rem;
+    /* Larger title */
+    font-weight: bold;
+    margin-bottom: 1rem;
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.persona-description {
+    font-size: 1.2rem;
+    /* Slightly larger description */
+    line-height: 1.6;
+    margin-bottom: 1.5rem;
+    max-width: 600px;
+    /* Prevent text line from being too long */
+}
+
+.introduce-button {
+    background-color: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    color: white;
+    font-weight: 500;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+    align-self: flex-start;
+}
+
+.introduce-button:hover {
+    background-color: rgba(255, 255, 255, 0.25);
+    border-color: white;
+}
+
+.introduce-button:disabled {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.3);
+    color: rgba(255, 255, 255, 0.5);
+    cursor: not-allowed;
+}
+
+@keyframes slideInAvatar {
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes slideInInfo {
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Responsive adjustments */
+@media (max-width: 992px) {
+
+    /* Adjust breakpoint for better tablet handling */
+    .persona-avatar-wrapper {
+        flex: 0 0 40%;
+        /* Avatar takes a bit more space on tablets */
+        max-width: 40%;
+        height: 70vh;
+    }
+
+    .persona-title {
+        font-size: 2.8rem;
+    }
+
+    .persona-description {
+        font-size: 1.1rem;
+    }
+}
+
+@media (max-width: 767px) {
+    .main-persona-section {
+        flex-direction: column;
+        /* Stack avatar and info vertically */
+        padding: 1rem;
+        min-height: auto;
+        /* Allow content to define height */
+    }
+
+    .persona-avatar-wrapper {
+        flex-basis: auto;
+        /* Let content define height */
+        width: 100%;
+        max-width: 70%;
+        /* Control max width of avatar on mobile */
+        height: auto;
+        /* Adjust height automatically */
+        max-height: 50vh;
+        /* Max height for avatar on mobile */
+        padding-right: 0;
+        margin-bottom: 1.5rem;
+    }
+
+    .persona-avatar-image {
+        transform: translateX(0);
+        /* Reset animation offset for column layout */
+    }
+
+    .persona-info-wrapper {
+        padding-left: 0;
+        text-align: center;
+        align-items: center;
+        /* Center button */
+        transform: translateX(0);
+        /* Reset animation offset */
+    }
+
+    .persona-title {
+        font-size: 2.2rem;
+    }
+
+    .persona-description {
+        font-size: 1rem;
+        max-width: 100%;
+    }
+
+    .introduce-button {
+        align-self: center;
+        padding: 0.6rem 1.2rem;
+    }
+}

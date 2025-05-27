@@ -1,61 +1,120 @@
 .container {
-  max-width: 1100px;
+  width: 100%;
   margin: 0 auto;
+  padding: 0;
+  }
+  
+  .detailed-analysis-section {
   padding: 20px;
+  background-color: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    margin-top: 20px;
 }
 
 h1 {
-  color: #333;
   margin-bottom: 2rem;
 }
 
 .card {
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  border-radius: 8px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    border-radius: 12px;
   overflow: hidden;
-  margin-bottom: 20px;
+  margin-bottom: 25px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background-color: rgba(40, 40, 55, 0.5);
 }
 
 .card-header {
-  padding: 15px;
+  padding: 15px 20px;
   font-weight: bold;
   display: flex;
   align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .card-header h2 {
   margin: 0;
-  font-size: 18px;
-  color: white;
+  font-size: 1.1rem;
+    color: #e0e0e0;
+  }
+  
+  /* Ensure h3 in dashboard card headers are also styled */
+  .dashboard-card .card-header h3 {
+    margin: 0;
+    font-size: 1.0rem;
+    /* Slightly smaller than h2 perhaps */
+    color: #e0e0e0;
+    /* Light color */
+    font-weight: bold;
 }
 
 .card-header i {
-  margin-right: 10px;
-  font-size: 18px;
+  margin-right: 12px;
+    font-size: 1.1rem;
+    opacity: 0.8;
 }
 
 .wallet-profile-header {
-  background-color: #4285f4;
+  background-color: #4a5568;
 }
 
 .activity-metrics-header {
-  background-color: #45c1de;
+  background-color: #2c5282;
 }
 
 .categories-header {
-  background-color: #3d8c40;
+  background-color: #2f855a;
 }
 
 .risk-header {
-  background-color: #d9534f;
+  background-color: #c53030;
 }
 
 .asset-header {
-  background-color: #f0ad4e;
+  background-color: #dd6b20;
 }
 
 .recommendations-header {
-  background-color: #4285f4;
+  background-color: #4a5568;
+  }
+  
+  .card .card-body,
+  .card .address-section,
+  .card .balance-section,
+  .card .wallet-age,
+  .card .persona-summary,
+  .card .categories-section,
+  .card .risk-section,
+  .card .activity-metrics,
+  .card .asset-distribution,
+  .card .recommendations {
+    color: #cccccc;
+  }
+  
+  /* More specific text color overrides for dashboard cards */
+  .dashboard-card .card-body p,
+  .dashboard-card .card-body li {
+    color: #dcdcdc;
+    /* A slightly brighter light gray for paragraph text */
+  }
+  
+  .dashboard-card .card-body strong {
+    color: #f0f0f0;
+    /* Bright white for strong/bold text */
+    font-weight: 600;
+    /* Ensure it looks bold */
+  }
+  
+  .dashboard-card .card-body ul {
+    padding-left: 20px;
+    /* Standard padding for lists */
+    list-style-type: disc;
+    /* Ensure bullets are visible if not styled away by Bootstrap */
+  }
+  
+  .dashboard-card .card-body .text-muted {
+    color: #a0a0a0 !important;
+    /* Ensure muted text is a softer gray, but still visible */
 }
 
 .address-section {
@@ -64,14 +123,15 @@ h1 {
 }
 
 .address-label {
-  font-size: 14px;
-  color: #777;
+  font-size: 0.9rem;
+    color: #a0aec0;
   margin-bottom: 5px;
 }
 
 .address-value {
   font-family: monospace;
   word-break: break-all;
+  color: #e0e0e0;
 }
 
 .balance-section {
@@ -80,9 +140,9 @@ h1 {
 }
 
 .balance-amount {
-  font-size: 16px;
+  font-size: 1.1rem;
   font-weight: bold;
-  color: #28a745;
+  color: #68d391;
   display: flex;
   align-items: center;
 }
@@ -105,8 +165,10 @@ h1 {
 .persona-summary {
   padding: 15px;
   font-style: italic;
-  background-color: #f9f9f9;
-  color: #555;
+  background-color: rgba(255, 255, 255, 0.03);
+    color: #b0b0b0;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .categories-section {
@@ -119,22 +181,25 @@ h1 {
 
 .tag {
   display: inline-block;
-  padding: 5px 10px;
-  background-color: #f0f0f0;
+  padding: 6px 12px;
+    background-color: rgba(255, 255, 255, 0.1);
   border-radius: 15px;
-  margin-right: 5px;
-  margin-bottom: 5px;
-  font-size: 13px;
+  margin-right: 8px;
+    margin-bottom: 8px;
+    font-size: 0.85rem;
+    border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .tag.active {
-  background-color: #4285f4;
+  background-color: #6e8efb;
   color: white;
+  border-color: #6e8efb;
 }
 
 .tag.balance {
-  background-color: #f0ad4e;
+  background-color: #a777e3;
   color: white;
+  border-color: #a777e3;
 }
 
 .risk-section {
@@ -149,8 +214,8 @@ h1 {
 }
 
 .risk-bar {
-  height: 15px;
-  background-color: #f5f5f5;
+  height: 18px;
+    background-color: rgba(0, 0, 0, 0.2);
   border-radius: 5px;
   overflow: hidden;
   margin-bottom: 10px;
@@ -158,16 +223,17 @@ h1 {
 
 .risk-level {
   height: 100%;
-  background: linear-gradient(90deg, #ffdd78 0%, #f0ad4e 100%);
+  background: linear-gradient(90deg, #f6e05e, #dd6b20, #c53030);
 }
 
 .risk-label {
   text-align: center;
-  background-color: #fff7e0;
+  background-color: rgba(0, 0, 0, 0.1);
   padding: 10px;
   font-weight: bold;
-  color: #f0ad4e;
+  color: #f0f0f0;
   margin-bottom: 15px;
+  border-radius: 4px;
 }
 
 .risk-factors {
@@ -214,6 +280,9 @@ h1 {
   font-size: 14px;
 }
 
+.metric-item span:first-child {
+  color: #a0aec0;
+}
 .asset-distribution {
   padding: 15px;
 }
@@ -234,9 +303,10 @@ h1 {
 .token-badge {
   padding: 5px 10px;
   border-radius: 15px;
-  background-color: #f5f5f5;
-  font-size: 13px;
-  border: 1px solid #ddd;
+  background-color: rgba(255, 255, 255, 0.08);
+    font-size: 0.8rem;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #c0c0c0;
 }
 
 .recommendations {
@@ -244,10 +314,10 @@ h1 {
 }
 
 .recommendation-type {
-  font-size: 15px;
+  font-size: 1rem;
   font-weight: bold;
   margin-bottom: 10px;
-  color: #4285f4;
+  color: #8a9ff1;
 }
 
 .tokens-to-explore {
@@ -269,7 +339,8 @@ h1 {
 
 .app-item {
   padding: 8px 0;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    color: #c0c0c0;
 }
 
 .app-item:last-child {
@@ -280,10 +351,68 @@ h1 {
   .dashboard-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 20px;
+    gap: 25px;
   }
   
   .full-width {
     grid-column: 1 / 3;
   }
+}
+
+.app-wrapper {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* Full Page Section Styling */
+.full-page-section {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 40px 20px;
+  opacity: 0;
+  transform: translateY(50px);
+  transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+  will-change: opacity, transform;
+}
+
+.full-page-section.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Ensure direct children of full-page-section (like a container div) take up width */
+.full-page-section>.container,
+.full-page-section>.container-fluid {
+  width: 100%;
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Animation for sections sliding up */
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(50px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+  width: 100%;
+}
+
+.full-width {
+  grid-column: 1 / -1;
 } 

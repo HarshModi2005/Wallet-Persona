@@ -1,5 +1,8 @@
 import { WalletDetails, Transaction, TokenBalance, NFT } from '../types/wallet.types';
 import { GeminiAIService } from './GeminiAIService';
+import { ethers } from 'ethers';
+import { ImageGenerationService } from './ImageGenerationService';
+import { ElevenLabsService } from './ElevenLabsService';
 
 export interface WalletPersona {
   category: string[];  // investor, collector, trader, DAO member, etc.
@@ -9,18 +12,32 @@ export interface WalletPersona {
   walletAge: string;
   topCollections: string[];
   bio: string;
+  avatarName: string;
+  avatarBio: string;
+  avatarImagePrompt: string;
+  avatarIntroScript: string;
+  avatarImageUrl?: string | null;
+  avatarVoiceUrl?: string | null;
   tags: string[];
+  riskFactorsDetails?: {
+    deterministicScore: number;
+    deterministicFactors: string[];
+    aiScore?: number;
+    aiFactors?: string[];
+    combinedScore: number;
+    finalFactors: string[];
+  };
   recommendations: {
     tokens: string[];
     nfts: string[];
     dapps: string[];
   };
   activitySummary: {
-    avgTransactionValue: number;
-    tradingFrequency: string;
-    lastActivity: Date | null;
-    totalInflow: number;
-    totalOutflow: number;
+    lastActivityDate: string | null;
+    totalInflowETH: number;
+    totalOutflowETH: number;
+    avgTransactionValueETH: number;
+    transactionCount: number;
   };
   visualization: {
     balanceDistribution: string; // ASCII chart
@@ -31,54 +48,235 @@ export interface WalletPersona {
 
 export class WalletPersonaService {
   private aiService: GeminiAIService;
+  private imageGenerationService: ImageGenerationService;
+  private elevenLabsService: ElevenLabsService;
+  private readonly thirtyDaysInMs = 30 * 24 * 60 * 60 * 1000;
+  private readonly oneYearInMs = 365 * 24 * 60 * 60 * 1000;
 
   constructor() {
     this.aiService = new GeminiAIService();
+    this.imageGenerationService = new ImageGenerationService(process.env.IMAGE_API_KEY);
+    this.elevenLabsService = new ElevenLabsService(process.env.ELEVENLABS_API_KEY);
   }
 
   async generatePersona(walletDetails: any): Promise<any> {
     try {
-      // Prepare transaction data for analysis
-      const transactions = walletDetails.transactions || {
-        inflow: [0.5, 0.2, 0.3, 0.6, 0.9, 0.4],
-        outflow: [0.1, 0.1, 0.15, 0.1, 0.3, 0.15],
-        months: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"]
-      };
-      
-      // Use AI to analyze transactions and generate insights
+      const transactionSummaryForAI = this._createTransactionSummaryForAI(walletDetails.transactions || []);
+      const balanceString = (walletDetails.balance && typeof walletDetails.balance.native === 'string') 
+        ? walletDetails.balance.native 
+        : '0';
+
       const aiAnalysis = await this.aiService.analyzeTransactions(
-        transactions, 
-        walletDetails.balance || '0'
+        transactionSummaryForAI, 
+        balanceString
       );
       
-      // Get personalized token and dApp recommendations
+      const deterministicRisk = this._calculateDeterministicRiskScore(walletDetails);
+
+      const combinedRiskScore = Math.round(( (aiAnalysis.riskAssessment.score || 50) + deterministicRisk.score) / 2);
+      const finalRiskFactors = [
+        ...new Set([
+          ...(aiAnalysis.riskAssessment.factors || []),
+          ...deterministicRisk.factors
+        ])
+      ];
+
+      const riskFactorsDetails = {
+        deterministicScore: deterministicRisk.score,
+        deterministicFactors: deterministicRisk.factors,
+        aiScore: aiAnalysis.riskAssessment.score || 50,
+        aiFactors: aiAnalysis.riskAssessment.factors || [],
+        combinedScore: combinedRiskScore,
+        finalFactors: finalRiskFactors
+      };
+      
       const recommendations = await this.aiService.generateRecommendations({
         assets: walletDetails.assets || {},
         tradingProfile: aiAnalysis.tradingProfile,
         activityLevel: aiAnalysis.activityLevel
       });
 
-      // Format recommendations in the expected shape
       const formattedRecommendations = {
         tokens: recommendations.tokens.map((token: any) => token.symbol),
         apps: recommendations.dapps.map((dapp: any) => dapp.name)
       };
 
-      // Return complete persona with all components
-      return {
+      const calculatedWalletAge = this._calculateWalletAge(walletDetails.profile?.firstTransactionDate);
+      const calculatedActivitySummary = this._calculateActivitySummary(walletDetails.transactions || []);
+
+      // Construct a temporary persona object for generating the image prompt
+      // Ensure all fields expected by generateAvatarImagePrompt are present
+      const tempPersonaForImagePrompt = {
         category: this.determineWalletCategory(aiAnalysis),
-        tags: this.generateWalletTags(aiAnalysis, walletDetails),
+        activityLevel: aiAnalysis.activityLevel,
+        tradingFrequency: aiAnalysis.tradingProfile === 'Frequent' ? 'High' : 
+                         (aiAnalysis.tradingProfile === 'Regular' ? 'Medium' : 'Low'),
+        riskAssessment: aiAnalysis.riskAssessment, // This is an object { level, score, factors }
         bio: aiAnalysis.bio,
-        riskScore: aiAnalysis.riskAssessment.score,
-        riskFactors: aiAnalysis.riskAssessment.factors,
+        avatarName: aiAnalysis.avatarName
+      };
+      const avatarImagePrompt = await this.aiService.generateAvatarImagePrompt(tempPersonaForImagePrompt);
+
+      // Generate avatar intro script using similar persona details
+      const avatarIntroScript = await this.aiService.generateAvatarIntroScript(tempPersonaForImagePrompt);
+
+      // Generate image and voice (placeholders for now)
+      const avatarImageUrl = await this.imageGenerationService.generateImageFromPrompt(avatarImagePrompt);
+      const avatarVoiceUrl = await this.elevenLabsService.generateVoice(avatarIntroScript);
+
+      return {
+        category: tempPersonaForImagePrompt.category,
+        tags: this.generateWalletTags(aiAnalysis, walletDetails, balanceString),
+        bio: aiAnalysis.bio,
+        avatarName: aiAnalysis.avatarName,
+        avatarBio: aiAnalysis.avatarBio,
+        avatarImagePrompt,
+        avatarIntroScript,
+        avatarImageUrl,
+        avatarVoiceUrl,
+        riskScore: combinedRiskScore,
+        riskFactors: finalRiskFactors,
+        riskFactorsDetails,
         activityLevel: aiAnalysis.activityLevel,
         tradingFrequency: aiAnalysis.tradingProfile === 'Frequent' ? 'High' : 
                          aiAnalysis.tradingProfile === 'Regular' ? 'Medium' : 'Low',
-        recommendations: formattedRecommendations
+        recommendations: formattedRecommendations,
+        walletAge: calculatedWalletAge,
+        activitySummary: calculatedActivitySummary
       };
     } catch (error) {
       console.error('Error generating wallet persona:', error);
       return this.getFallbackPersona(walletDetails);
+    }
+  }
+
+  private _createTransactionSummaryForAI(transactions: Transaction[]): { inflow: number[], outflow: number[], months: string[] } {
+    if (!transactions || transactions.length === 0) {
+      return { inflow: [], outflow: [], months: [] };
+    }
+
+    const monthlyData: { [monthYear: string]: { inflow: number, outflow: number, monthOrder: number } } = {};
+    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+    // Consider transactions from the last 6-12 months for a relevant summary
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+    const sixMonthsAgoTimestamp = Math.floor(sixMonthsAgo.getTime() / 1000);
+
+    const relevantTransactions = transactions.filter(tx => tx.timestamp >= sixMonthsAgoTimestamp);
+    relevantTransactions.sort((a, b) => a.timestamp - b.timestamp); // Ensure chronological order
+
+    for (const tx of relevantTransactions) {
+      const date = new Date(tx.timestamp * 1000);
+      const month = date.getMonth(); // 0-11
+      const year = date.getFullYear();
+      const monthYear = `${monthNames[month]} ${year}`;
+      const monthOrder = year * 100 + month; // For sorting chronologically
+
+      if (!monthlyData[monthYear]) {
+        monthlyData[monthYear] = { inflow: 0, outflow: 0, monthOrder };
+      }
+
+      const valueEth = parseFloat(ethers.formatEther(tx.value || '0'));
+
+      if (tx.type === 'incoming') {
+        monthlyData[monthYear].inflow += valueEth;
+      } else if (tx.type === 'outgoing') {
+        monthlyData[monthYear].outflow += valueEth;
+      }
+    }
+
+    const sortedMonthYears = Object.keys(monthlyData).sort((a, b) => monthlyData[a].monthOrder - monthlyData[b].monthOrder);
+    
+    // Take the last 6 available months of data, or fewer if not available
+    const recentSortedMonthYears = sortedMonthYears.slice(-6);
+
+    const inflow: number[] = [];
+    const outflow: number[] = [];
+    const months: string[] = [];
+
+    for (const monthYear of recentSortedMonthYears) {
+      inflow.push(parseFloat(monthlyData[monthYear].inflow.toFixed(4)));
+      outflow.push(parseFloat(monthlyData[monthYear].outflow.toFixed(4)));
+      months.push(monthYear.split(' ')[0]); // Just the month name e.g. "Jan"
+    }
+    
+    // If there's no transaction data for the last 6 months, return a default to avoid empty arrays
+    if (months.length === 0) {
+        return {
+            inflow: [0,0,0,0,0,0],
+            outflow: [0,0,0,0,0,0],
+            months: monthNames.slice(new Date().getMonth() - 5).concat(monthNames.slice(0, new Date().getMonth() +1)).map(m => m.substring(0,3)) // last 6 month names
+        };
+    }
+
+    return { inflow, outflow, months };
+  }
+
+  private _calculateActivitySummary(transactions: Transaction[]): WalletPersona['activitySummary'] {
+    if (!transactions || transactions.length === 0) {
+      return {
+        lastActivityDate: null,
+        totalInflowETH: 0,
+        totalOutflowETH: 0,
+        avgTransactionValueETH: 0,
+        transactionCount: 0
+      };
+    }
+
+    let lastActivityTimestamp = 0;
+    if (transactions.length > 0) {
+      lastActivityTimestamp = Math.max(...transactions.map(tx => tx.timestamp));
+    }
+    const lastActivityDate = lastActivityTimestamp ? new Date(lastActivityTimestamp * 1000).toISOString() : null;
+
+    const totalInflowETH = transactions
+      .filter(tx => tx.type === 'incoming')
+      .reduce((sum, tx) => sum + parseFloat(ethers.formatEther(tx.value || '0')), 0); // Convert from wei
+    
+    const totalOutflowETH = transactions
+      .filter(tx => tx.type === 'outgoing')
+      .reduce((sum, tx) => sum + parseFloat(ethers.formatEther(tx.value || '0')), 0); // Convert from wei
+
+    const totalValueETH = transactions.reduce((sum, tx) => sum + parseFloat(ethers.formatEther(tx.value || '0')), 0);
+    const avgTransactionValueETH = transactions.length > 0 ? totalValueETH / transactions.length : 0;
+    
+    return {
+      lastActivityDate,
+      totalInflowETH,
+      totalOutflowETH,
+      avgTransactionValueETH,
+      transactionCount: transactions.length
+    };
+  }
+
+  private _calculateWalletAge(firstTransactionDate?: Date): string {
+    if (!firstTransactionDate) {
+      return 'Unknown';
+    }
+    
+    const now = new Date().getTime();
+    const firstTxTime = new Date(firstTransactionDate).getTime(); // Ensure it's a Date object then getTime
+    
+    if (isNaN(firstTxTime)) return 'Unknown'; // Invalid date from backend
+
+    const ageInMs = now - firstTxTime;
+
+    if (ageInMs < 0) return 'Future Wallet? (check date)'; // Edge case for clock sync issues
+
+    const ageInDays = Math.floor(ageInMs / (1000 * 60 * 60 * 24));
+    
+    if (ageInDays === 0) return 'Today';
+    if (ageInDays < 0) return 'Unknown'; // Should be caught by future wallet check
+
+    if (ageInDays > 365 * 2) {
+      return `${Math.floor(ageInDays / 365)} years`;
+    } else if (ageInDays > 365) {
+      return '1+ year';
+    } else if (ageInDays > 30) {
+      return `${Math.floor(ageInDays / 30)} months`;
+    } else {
+      return `${ageInDays} day${ageInDays > 1 ? 's' : ''}`;
     }
   }
 
@@ -98,14 +296,16 @@ export class WalletPersonaService {
     }
   }
 
-  private generateWalletTags(analysis: any, walletDetails: any): string[] {
+  private generateWalletTags(analysis: any, walletDetails: any, balanceString: string): string[] {
     const tags: string[] = [];
     
     // Add activity level tag
-    tags.push(analysis.activityLevel);
+    if (analysis.activityLevel) {
+      tags.push(analysis.activityLevel);
+    }
     
     // Add balance-based tag
-    const balance = parseFloat(walletDetails.balance || '0');
+    const balance = parseFloat(balanceString);
     if (balance < 0.01) {
       tags.push('Low Balance');
     } else if (balance > 1) {
@@ -129,13 +329,21 @@ export class WalletPersonaService {
 
   private getFallbackPersona(walletDetails: any): any {
     // Default persona when AI analysis fails
-    const balance = parseFloat(walletDetails.balance || '0');
+    const balance = parseFloat(walletDetails.balance?.native || '0');
     const isLowBalance = balance < 0.01;
+    const calculatedWalletAge = this._calculateWalletAge(walletDetails.profile?.firstTransactionDate);
+    const calculatedActivitySummary = this._calculateActivitySummary(walletDetails.transactions || []);
     
     return {
       category: 'Blockchain Explorer',
       tags: ['Casual', isLowBalance ? 'Low Balance' : 'Medium Balance'],
       bio: 'A blockchain explorer venturing through the Ethereum ecosystem. Casual on the network. Frequently interacts with DeFi protocols.',
+      avatarName: 'The Explorer',
+      avatarBio: 'Venturing through the digital frontier.',
+      avatarImagePrompt: 'A friendly cartoon character with a magnifying glass looking at a blockchain, simple and inviting.',
+      avatarIntroScript: "Hello! I'm The Explorer. Let's see what your wallet tells us about your adventures in the crypto world!",
+      avatarImageUrl: 'https://images.unsplash.com/photo-1639762681057-408e52192e50?q=80&w=1932&auto=format&fit=crop',
+      avatarVoiceUrl: null,
       riskScore: 50,
       riskFactors: ['Moderate wallet age', 'Some interaction with unverified tokens'],
       activityLevel: 'Casual',
@@ -143,8 +351,118 @@ export class WalletPersonaService {
       recommendations: {
         tokens: ['ETH', 'LINK', 'UNI', 'ARB', 'MATIC'],
         apps: ['Uniswap', 'OpenSea', 'Lido', 'Aave']
-      }
+      },
+      walletAge: calculatedWalletAge,
+      activitySummary: calculatedActivitySummary
     };
+  }
+
+  private _calculateDeterministicRiskScore(walletDetails: WalletDetails): { score: number; factors: string[] } {
+    const factors: string[] = [];
+    let score = 50; // Start at medium risk
+
+    const transactions = walletDetails.transactions || [];
+    const nativeBalance = parseFloat(walletDetails.balance?.native || '0');
+    const firstTransactionDate = walletDetails.profile?.firstTransactionDate;
+
+    // Factor 1: Wallet Age and History
+    if (transactions.length === 0 && nativeBalance === 0) {
+      score = 15;
+      factors.push('Empty and inactive wallet.');
+    } else {
+      if (transactions.length > 100) {
+        score -= 10;
+        factors.push('Extensive transaction history (降低风险).');
+      } else if (transactions.length < 10) {
+        score += 10;
+        factors.push('Limited transaction history (增加风险).');
+      }
+
+      if (firstTransactionDate) {
+        const ageInDays = Math.floor((new Date().getTime() - new Date(firstTransactionDate).getTime()) / (1000 * 60 * 60 * 24));
+        if (ageInDays > 365) {
+          score -= 15;
+          factors.push(`Wallet age: ${Math.floor(ageInDays / 365)} years (降低风险).`);
+        } else if (ageInDays > 180) {
+          score -= 10;
+          factors.push(`Wallet age: ${Math.floor(ageInDays / 30)} months (降低风险).`);
+        } else if (ageInDays < 30) {
+          score += 15;
+          factors.push('Very new wallet (less than 30 days) (增加风险).');
+          if (nativeBalance > 10) {
+            score += 10;
+            factors.push('New wallet with significant initial balance (>10 ETH) (增加风险).');
+          }
+        }
+      } else {
+        score += 10;
+        factors.push('Wallet creation date unknown (增加风险).');
+      }
+    }
+
+    // Factor 2: Suspicious Token Interactions
+    const spamKeywords = [
+        'reward', 'claim', 'airdrop', 'gift', '.io', '.net', '.xyz', '.site',
+        'bonus', 'giveaway', 'free', 'winner', 'prize', 'collect', 'official',
+        'support', 'help', 'customer', 'service', 'alert', 'warning',
+        'key', 'pass', 'secret', 'tokenlon', 'walletnow', // From WalletService
+        'visit', // Common in scam descriptions
+    ];
+    const suspectTokens = (walletDetails.tokens || []).filter(token => {
+      const tokenNameLower = (token.name || '').toLowerCase();
+      const tokenSymbolLower = (token.symbol || '').toLowerCase();
+      if (tokenNameLower.includes('http')) return true;
+      if (!tokenSymbolLower || tokenSymbolLower.length > 10) return true; // No symbol or very long
+      return spamKeywords.some(keyword => tokenNameLower.includes(keyword) || tokenSymbolLower.includes(keyword));
+    });
+
+    if (suspectTokens.length > 0) {
+      score += Math.min(suspectTokens.length * 5, 25); // Cap penalty
+      factors.push(`Interacted with ${suspectTokens.length} potentially suspicious token(s) (增加风险).`);
+    }
+    
+    // Factor 3: Transaction Patterns (Placeholders for more complex logic)
+    // Placeholder: High percentage of outgoing transactions to new/unverified addresses
+    // This would require tracking addresses interacted with over time.
+    // For now, a simple check on outflow vs inflow ratio if transaction count is low.
+    if (transactions.length > 5 && transactions.length < 50) {
+        const outgoingTx = transactions.filter(tx => tx.type === 'outgoing').length;
+        const incomingTx = transactions.filter(tx => tx.type === 'incoming').length;
+        if (outgoingTx > incomingTx * 2 && incomingTx > 0) { // Significantly more outflow
+            score += 10;
+            factors.push('High ratio of outgoing to incoming transactions for a moderately active wallet (增加风险).');
+        }
+         if (incomingTx === 0 && outgoingTx > 5) {
+            score += 15;
+            factors.push('Wallet primarily used for sending funds with few deposits (增加风险).');
+        }
+    }
+
+
+    // Factor 4: Low balance for prolonged period with high transaction volume (Placeholder)
+    // This requires historical balance data alongside transactions.
+    // Example: if (avgBalance < 0.01 ETH && totalTransactions > 100) { score += 10; factors.push(...); }
+    if (nativeBalance < 0.01 && transactions.length > 50) {
+        score += 10;
+        factors.push('Low balance despite high transaction volume (potential burner activity) (增加风险).');
+    }
+
+
+    // Factor 5: Interaction with unverified contracts (Placeholder)
+    // This requires a mechanism to check contract verification status (e.g., Etherscan API)
+    // Example: if (interactedWithUnverifiedContracts > 3) { score += 15; factors.push(...); }
+    factors.push('Contract verification status not currently analyzed (neutral).');
+    
+    // Factor 6: Age of contracts interacted with (Placeholder)
+    // This requires fetching contract creation dates.
+    // Example: if (avgContractAge < 30 days) { score += 10; factors.push(...); }
+    factors.push('Age of interacted contracts not currently analyzed (neutral).');
+
+
+    // Normalize score to 0-100
+    score = Math.max(0, Math.min(100, score));
+
+    return { score, factors };
   }
 
   /**
@@ -155,9 +473,9 @@ export class WalletPersonaService {
     const riskScore = this.calculateRiskScore(walletDetails);
     const activeLevel = this.determineActivityLevel(walletDetails.transactions);
     const preferredTokens = this.getPreferredTokens(walletDetails.tokens);
-    const walletAge = this.determineWalletAge(walletDetails);
+    const walletAge = this._calculateWalletAge(walletDetails.profile?.firstTransactionDate);
     const topCollections = this.getTopCollections(walletDetails.nfts);
-    const activitySummary = this.generateActivitySummary(walletDetails);
+    const activitySummary: WalletPersona['activitySummary'] = this._calculateActivitySummary(walletDetails.transactions);
     const tags = this.generateTags(walletDetails, category, activeLevel);
     const recommendations = this.generateRecommendations(walletDetails, category);
     const visualization = this.generateVisualizations(walletDetails, riskScore);
@@ -170,6 +488,12 @@ export class WalletPersonaService {
       walletAge,
       topCollections,
       bio: this.generateBio(walletDetails, category, activeLevel, preferredTokens, topCollections),
+      avatarName: "The Classic User",
+      avatarBio: "An Ethereum user from the early days.",
+      avatarImagePrompt: "Pixel art character representing an early Ethereum adopter.",
+      avatarIntroScript: "I am the Classic User. I've seen the blockchain evolve. What stories does your wallet hold?",
+      avatarImageUrl: 'https://images.unsplash.com/photo-1639762681057-408e52192e50?q=80&w=1932&auto=format&fit=crop',
+      avatarVoiceUrl: null,
       tags,
       recommendations,
       activitySummary,
@@ -330,27 +654,6 @@ export class WalletPersonaService {
   }
   
   /**
-   * Determine wallet age in human-readable format
-   */
-  private determineWalletAge(walletDetails: WalletDetails): string {
-    if (!walletDetails.profile.firstTransactionDate) {
-      return 'Unknown';
-    }
-    
-    const ageInDays = Math.floor((new Date().getTime() - walletDetails.profile.firstTransactionDate.getTime()) / (1000 * 60 * 60 * 24));
-    
-    if (ageInDays > 365 * 2) {
-      return `${Math.floor(ageInDays / 365)} years`;
-    } else if (ageInDays > 365) {
-      return '1+ year';
-    } else if (ageInDays > 30) {
-      return `${Math.floor(ageInDays / 30)} months`;
-    } else {
-      return `${ageInDays} days`;
-    }
-  }
-  
-  /**
    * Get top NFT collections based on count
    */
   private getTopCollections(nfts: NFT[]): string[] {
@@ -368,153 +671,6 @@ export class WalletPersonaService {
       .sort((a, b) => b[1] - a[1])
       .slice(0, 5)
       .map(entry => entry[0]);
-  }
-  
-  /**
-   * Generate activity summary with key metrics
-   */
-  private generateActivitySummary(walletDetails: WalletDetails): WalletPersona['activitySummary'] {
-    const transactions = walletDetails.transactions;
-    
-    // Calculate average transaction value
-    const totalValue = transactions.reduce((sum, tx) => sum + parseFloat(tx.value), 0);
-    const avgValue = transactions.length > 0 ? totalValue / transactions.length : 0;
-    
-    // Determine trading frequency
-    let tradingFrequency = 'Low';
-    if (transactions.length > 100) {
-      tradingFrequency = 'Very High';
-    } else if (transactions.length > 50) {
-      tradingFrequency = 'High';
-    } else if (transactions.length > 20) {
-      tradingFrequency = 'Medium';
-    }
-    
-    // Get last activity date
-    let lastActivity: Date | null = null;
-    if (transactions.length > 0) {
-      const lastTxTimestamp = Math.max(...transactions.map(tx => tx.timestamp));
-      lastActivity = new Date(lastTxTimestamp * 1000);
-    }
-    
-    // Calculate total inflow and outflow
-    const totalInflow = transactions
-      .filter(tx => tx.type === 'incoming')
-      .reduce((sum, tx) => sum + parseFloat(tx.value), 0);
-    
-    const totalOutflow = transactions
-      .filter(tx => tx.type === 'outgoing')
-      .reduce((sum, tx) => sum + parseFloat(tx.value), 0);
-    
-    return {
-      avgTransactionValue: avgValue,
-      tradingFrequency,
-      lastActivity,
-      totalInflow,
-      totalOutflow
-    };
-  }
-  
-  /**
-   * Generate relevant tags for the wallet
-   */
-  private generateTags(walletDetails: WalletDetails, categories: string[], activeLevel: string): string[] {
-    const tags = [...categories];
-    
-    // Add activity level
-    tags.push(activeLevel);
-    
-    // Add ENS tag if present
-    if (walletDetails.profile.ensName) {
-      tags.push('ENS Owner');
-    }
-    
-    // Add balance-based tags
-    const ethBalance = parseFloat(walletDetails.balance.native);
-    if (ethBalance > 100) {
-      tags.push('High Balance');
-    } else if (ethBalance > 10) {
-      tags.push('Medium Balance');
-    } else {
-      tags.push('Low Balance');
-    }
-    
-    // Add NFT-related tags
-    if (walletDetails.nfts.length > 20) {
-      tags.push('NFT Enthusiast');
-    } else if (walletDetails.nfts.length > 0) {
-      tags.push('NFT Holder');
-    }
-    
-    // DeFi tags
-    if (walletDetails.defiPositions.length > 0) {
-      tags.push('DeFi User');
-    }
-    
-    return [...new Set(tags)]; // Remove duplicates
-  }
-  
-  /**
-   * Generate personalized recommendations based on wallet profile
-   */
-  private generateRecommendations(walletDetails: WalletDetails, categories: string[]): WalletPersona['recommendations'] {
-    const recommendations = {
-      tokens: [] as string[],
-      nfts: [] as string[],
-      dapps: [] as string[]
-    };
-    
-    // For empty or inactive wallets, provide starter recommendations
-    if (walletDetails.transactions.length === 0 && parseFloat(walletDetails.balance.native) === 0) {
-      recommendations.tokens = ['ETH', 'USDC', 'USDT', 'DAI', 'WBTC'];
-      recommendations.dapps = ['Uniswap', 'Aave', 'Lido', 'ENS', 'OpenSea'];
-      recommendations.nfts = ['ENS Domains', 'Pudgy Penguins', 'Base Ghosts', 'Checks', 'Moonbirds'];
-      return recommendations;
-    }
-    
-    // Token recommendations based on existing holdings and categories
-    if (categories.includes('DeFi Investor')) {
-      const defiTokens = ['AAVE', 'COMP', 'MKR', 'UNI', 'CRV', 'BAL', 'SNX'];
-      const existingTokens = walletDetails.tokens.map(t => t.symbol.toUpperCase());
-      recommendations.tokens = defiTokens.filter(t => !existingTokens.includes(t)).slice(0, 3);
-      
-      // Add DeFi dApps
-      recommendations.dapps.push('Aave', 'Compound', 'Uniswap', 'Curve');
-    }
-    
-    if (categories.includes('NFT Collector')) {
-      recommendations.nfts.push('Bored Ape Yacht Club', 'Azuki', 'Doodles', 'CryptoPunks');
-      recommendations.dapps.push('OpenSea', 'Blur', 'Rarible');
-    }
-    
-    if (categories.includes('Active Trader')) {
-      recommendations.dapps.push('dYdX', 'GMX', 'Uniswap');
-      recommendations.tokens.push('ETH', 'BTC', 'ARB', 'OP');
-    }
-    
-    if (categories.includes('DAO Member')) {
-      recommendations.dapps.push('Snapshot', 'Tally', 'Boardroom');
-    }
-    
-    if (categories.includes('Meme Token Enthusiast')) {
-      recommendations.tokens.push('SHIB', 'FLOKI', 'PEPE');
-    }
-    
-    // Default recommendations if no specific matches
-    if (recommendations.tokens.length === 0) {
-      recommendations.tokens = ['ETH', 'LINK', 'UNI', 'ARB'];
-    }
-    
-    if (recommendations.dapps.length === 0) {
-      recommendations.dapps = ['Uniswap', 'OpenSea', 'Lido'];
-    }
-    
-    // Limit to unique values
-    recommendations.tokens = [...new Set(recommendations.tokens)].slice(0, 5);
-    recommendations.nfts = [...new Set(recommendations.nfts)].slice(0, 5);
-    recommendations.dapps = [...new Set(recommendations.dapps)].slice(0, 5);
-    
-    return recommendations;
   }
   
   /**
@@ -722,5 +878,107 @@ export class WalletPersonaService {
     else riskText = 'Very Low Risk';
     
     return `  Risk Meter: [${riskBar}] ${riskScore}/100 - ${riskText}`;
+  }
+
+  /**
+   * Generate personalized recommendations based on wallet profile
+   */
+  private generateRecommendations(walletDetails: WalletDetails, categories: string[]): WalletPersona['recommendations'] {
+    const recommendations = {
+      tokens: [] as string[],
+      nfts: [] as string[],
+      dapps: [] as string[]
+    };
+    
+    // For empty or inactive wallets, provide starter recommendations
+    if (walletDetails.transactions.length === 0 && parseFloat(walletDetails.balance.native) === 0) {
+      recommendations.tokens = ['ETH', 'USDC', 'USDT', 'DAI', 'WBTC'];
+      recommendations.dapps = ['Uniswap', 'Aave', 'Lido', 'ENS', 'OpenSea'];
+      recommendations.nfts = ['ENS Domains', 'Pudgy Penguins', 'Base Ghosts', 'Checks', 'Moonbirds'];
+      return recommendations;
+    }
+    
+    // Token recommendations based on existing holdings and categories
+    if (categories.includes('DeFi Investor')) {
+      const defiTokens = ['AAVE', 'COMP', 'MKR', 'UNI', 'CRV', 'BAL', 'SNX'];
+      const existingTokens = walletDetails.tokens.map(t => t.symbol.toUpperCase());
+      recommendations.tokens = defiTokens.filter(t => !existingTokens.includes(t)).slice(0, 3);
+      
+      // Add DeFi dApps
+      recommendations.dapps.push('Aave', 'Compound', 'Uniswap', 'Curve');
+    }
+    
+    if (categories.includes('NFT Collector')) {
+      recommendations.nfts.push('Bored Ape Yacht Club', 'Azuki', 'Doodles', 'CryptoPunks');
+      recommendations.dapps.push('OpenSea', 'Blur', 'Rarible');
+    }
+    
+    if (categories.includes('Active Trader')) {
+      recommendations.dapps.push('dYdX', 'GMX', 'Uniswap');
+      recommendations.tokens.push('ETH', 'BTC', 'ARB', 'OP');
+    }
+    
+    if (categories.includes('DAO Member')) {
+      recommendations.dapps.push('Snapshot', 'Tally', 'Boardroom');
+    }
+    
+    if (categories.includes('Meme Token Enthusiast')) {
+      recommendations.tokens.push('SHIB', 'FLOKI', 'PEPE');
+    }
+    
+    // Default recommendations if no specific matches
+    if (recommendations.tokens.length === 0) {
+      recommendations.tokens = ['ETH', 'LINK', 'UNI', 'ARB'];
+    }
+    
+    if (recommendations.dapps.length === 0) {
+      recommendations.dapps = ['Uniswap', 'OpenSea', 'Lido'];
+    }
+    
+    // Limit to unique values
+    recommendations.tokens = [...new Set(recommendations.tokens)].slice(0, 5);
+    recommendations.nfts = [...new Set(recommendations.nfts)].slice(0, 5);
+    recommendations.dapps = [...new Set(recommendations.dapps)].slice(0, 5);
+    
+    return recommendations;
+  }
+
+  /**
+   * Generate relevant tags for the wallet
+   */
+  private generateTags(walletDetails: WalletDetails, categories: string[], activeLevel: string): string[] {
+    const tags = [...categories];
+    
+    // Add activity level
+    tags.push(activeLevel);
+    
+    // Add ENS tag if present
+    if (walletDetails.profile.ensName) {
+      tags.push('ENS Owner');
+    }
+    
+    // Add balance-based tags
+    const ethBalance = parseFloat(walletDetails.balance.native);
+    if (ethBalance > 100) {
+      tags.push('High Balance');
+    } else if (ethBalance > 10) {
+      tags.push('Medium Balance');
+    } else {
+      tags.push('Low Balance');
+    }
+    
+    // Add NFT-related tags
+    if (walletDetails.nfts.length > 20) {
+      tags.push('NFT Enthusiast');
+    } else if (walletDetails.nfts.length > 0) {
+      tags.push('NFT Holder');
+    }
+    
+    // DeFi tags
+    if (walletDetails.defiPositions.length > 0) {
+      tags.push('DeFi User');
+    }
+    
+    return [...new Set(tags)]; // Remove duplicates
   }
 } 

@@ -10,6 +10,13 @@ dotenv.config();
 const app = express();
 const port = process.env.PORT || 3001;
 
+// Initialize services once
+const apiKey = process.env.MORALIS_API_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJub25jZSI6IjM0YzdkNDc5LTE4ODMtNGY1YS05YjRiLTRhOTA3NDQyODQ3YiIsIm9yZ0lkIjoiNDQ4MTY3IiwidXNlcklkIjoiNDYxMTA0IiwidHlwZUlkIjoiNDFkZWZkYjAtMjY0MC00NDM1LTk4NDEtZDY1ZGI2MTVmMTFiIiwidHlwZSI6IlBST0pFQ1QiLCJpYXQiOjE3NDc3NTM0ODksImV4cCI6NDkwMzUxMzQ4OX0.UHCyuzpPgcRzjN6D-mEunTSpWUU7em-ByyCeiqJa4ic';
+const rpcUrl = process.env.RPC_URL || 'https://ethereum-rpc.publicnode.com';
+
+const walletService = new WalletService(apiKey, rpcUrl);
+const personaService = new WalletPersonaService(); // This will in turn init GeminiAIService, ImageGenerationService, ElevenLabsService once.
+
 // Detailed CORS configuration
 app.use(cors({
   origin: ['http://localhost:3000', 'http://127.0.0.1:3000'],
@@ -39,30 +46,50 @@ app.get('/api/test', (req, res) => {
 // API endpoint to analyze a wallet
 app.post('/api/analyze-wallet', async (req, res) => {
   try {
-    const { address } = req.body;
+    const { address: rawAddress } = req.body;
+    const { historicalSnapshotDate: rawHistoricalSnapshotDate } = req.query; // Get from query params
     
-    console.log('Received request to analyze wallet:', address);
+    console.log('Received request to analyze wallet:', rawAddress);
+    console.log('Historical Snapshot Date (raw from query):', rawHistoricalSnapshotDate);
+    
+    if (!rawAddress || typeof rawAddress !== 'string') {
+      return res.status(400).json({ error: 'Wallet address is required and must be a string' });
+    }
+
+    const address = rawAddress.trim();
+    let historicalSnapshotDate: string | undefined = undefined;
+
+    if (rawHistoricalSnapshotDate && typeof rawHistoricalSnapshotDate === 'string') {
+      // Basic validation for YYYY-MM-DD format, can be improved
+      if (/^\d{4}-\d{2}-\d{2}$/.test(rawHistoricalSnapshotDate)) {
+        historicalSnapshotDate = rawHistoricalSnapshotDate;
+        console.log('Using historical snapshot date:', historicalSnapshotDate);
+      } else {
+        console.warn('Invalid historicalSnapshotDate format, ignoring. Expected YYYY-MM-DD.');
+      }
+    }
     
     if (!address) {
       return res.status(400).json({ error: 'Wallet address is required' });
     }
     
-    // Use the API key directly if not found in environment
-    const apiKey = process.env.MORALIS_API_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJub25jZSI6IjM0YzdkNDc5LTE4ODMtNGY1YS05YjRiLTRhOTA3NDQyODQ3YiIsIm9yZ0lkIjoiNDQ4MTY3IiwidXNlcklkIjoiNDYxMTA0IiwidHlwZUlkIjoiNDFkZWZkYjAtMjY0MC00NDM1LTk4NDEtZDY1ZGI2MTVmMTFiIiwidHlwZSI6IlBST0pFQ1QiLCJpYXQiOjE3NDc3NTM0ODksImV4cCI6NDkwMzUxMzQ4OX0.UHCyuzpPgcRzjN6D-mEunTSpWUU7em-ByyCeiqJa4ic';
+    // API key and RPC URL are now used when services are initialized globally
+    // const apiKey = process.env.MORALIS_API_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJub25jZSI6IjM0YzdkNDc5LTE4ODMtNGY1YS05YjRiLTRhOTA3NDQyODQ3YiIsIm9yZ0lkIjoiNDQ4MTY3IiwidXNlcklkIjoiNDYxMTA0IiwidHlwZUlkIjoiNDFkZWZkYjAtMjY0MC00NDM1LTk4NDEtZDY1ZGI2MTVmMTFiIiwidHlwZSI6IlBST0pFQ1QiLCJpYXQiOjE3NDc3NTM0ODksImV4cCI6NDkwMzUxMzQ4OX0.UHCyuzpPgcRzjN6D-mEunTSpWUU7em-ByyCeiqJa4ic';
+    // const rpcUrl = process.env.RPC_URL || 'https://ethereum-rpc.publicnode.com';
     
-    // Use a public Ethereum RPC endpoint
-    const rpcUrl = process.env.RPC_URL || 'https://ethereum-rpc.publicnode.com';
+    console.log(`Analyzing wallet: ${address} using pre-initialized services.`);
     
-    console.log(`Analyzing wallet: ${address}`);
-    
-    const walletService = new WalletService(apiKey, rpcUrl);
-    const personaService = new WalletPersonaService();
+    // Use the global instances of the services
+    // const walletService = new WalletService(apiKey, rpcUrl);
+    // const personaService = new WalletPersonaService();
     
     try {
-      // Fetch wallet details
-      const details = await walletService.getWalletDetails(address);
+      // Fetch wallet details, passing the historicalSnapshotDate
+      const details = await walletService.getWalletDetails(address, historicalSnapshotDate);
       
       // Generate persona with AI enhancement
+      // Persona generation should ideally use the profile data as of the snapshot date too.
+      // For now, WalletPersonaService is not aware of historicalSnapshotDate. This can be a future enhancement.
       const persona = await personaService.generatePersona(details);
       
       // Combine and return the data

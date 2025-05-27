@@ -1,0 +1,214 @@
+.detailed-analysis-section {
+    margin-top: 2rem;
+    padding: 1.5rem;
+    background-color: #2c2c3e;
+    /* Darker background for the section */
+    border-radius: 8px;
+    color: #e0e0e0;
+    /* Light text color */
+}
+
+.detailed-analysis-section-loading {
+    text-align: center;
+    padding: 2rem;
+    font-style: italic;
+    color: #a0a0b0;
+}
+
+.section-title {
+    font-size: 1.8rem;
+    color: #82aaff;
+    /* Light blue for titles */
+    margin-bottom: 1.5rem;
+    text-align: center;
+    border-bottom: 1px solid #444;
+    padding-bottom: 0.5rem;
+}
+
+.analysis-subsection {
+    background-color: #35354a;
+    /* Slightly lighter card background */
+    padding: 1rem;
+    border-radius: 6px;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.analysis-subsection.card {
+    border: 1px solid #4a4a6a;
+}
+
+.subsection-title {
+    font-size: 1.4rem;
+    color: #aaccff;
+    /* Lighter blue for subsection titles */
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+}
+
+.subsection-title .svg-inline--fa {
+    margin-right: 0.5rem;
+}
+
+.stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.stat-item {
+    background-color: #3f3f5a;
+    /* Card item background */
+    padding: 0.8rem;
+    border-radius: 4px;
+    display: flex;
+    flex-direction: column;
+    font-size: 0.95rem;
+}
+
+.stat-item strong {
+    color: #c0c0ff;
+    margin-bottom: 0.3rem;
+    font-weight: 600;
+}
+
+.stat-item span {
+    color: #f0f0f0;
+    word-break: break-all;
+    /* For long hashes */
+}
+
+.stat-item small {
+    font-size: 0.8em;
+    color: #b0b0c0;
+    margin-top: 0.2rem;
+}
+
+.stat-item a {
+    color: #82aaff;
+    text-decoration: none;
+    word-break: break-all;
+}
+
+.stat-item a:hover {
+    text-decoration: underline;
+}
+
+.top-addresses ul {
+    list-style-type: none;
+    padding-left: 0;
+}
+
+.top-addresses li {
+    background-color: #3f3f5a;
+    padding: 0.6rem;
+    border-radius: 4px;
+    margin-bottom: 0.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.9rem;
+}
+
+.top-addresses li span {
+    color: #c0c0c0;
+    font-size: 0.85em;
+}
+
+/* Heatmap Bar Chart Styles */
+.heatmap-container {
+    margin-top: 1.5rem;
+}
+
+.heatmap-container h4 {
+    font-size: 1.1rem;
+    color: #b0c0ff;
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+}
+
+.heatmap-container h4 .svg-inline--fa {
+    margin-right: 0.5rem;
+}
+
+.heatmap-bar-chart {
+    display: flex;
+    justify-content: space-around;
+    align-items: flex-end;
+    background-color: #3f3f5a;
+    padding: 1rem 0.5rem;
+    border-radius: 4px;
+    min-height: 120px;
+    /* Ensure some height even with low values */
+    margin-bottom: 1rem;
+}
+
+.bar-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    font-size: 0.75rem;
+    color: #d0d0d0;
+    flex-basis: 0;
+    /* Distribute space evenly */
+    flex-grow: 1;
+}
+
+.bar-label {
+    margin-bottom: 4px;
+    font-weight: 500;
+}
+
+.bar {
+    background-color: #82aaff;
+    width: 70%;
+    /* Bar width relative to its container */
+    border-radius: 3px 3px 0 0;
+    position: relative;
+    transition: height 0.3s ease-out;
+    display: flex;
+    align-items: flex-end;
+    /* Align value to bottom of bar */
+    justify-content: center;
+}
+
+.bar-value {
+    position: absolute;
+    bottom: -16px;
+    /* Position value below the bar */
+    font-size: 0.7rem;
+    color: #e0e0e0;
+    /* visibility: hidden; /* Hide by default, show on hover/focus or if bar is too small */
+}
+
+/* .bar-item:hover .bar-value, 
+.bar-item:focus .bar-value {
+    visibility: visible;
+} */
+
+/* Specific styling for hour chart if needed to make it wider or scrollable */
+.hour-chart {
+    overflow-x: auto;
+    /* Allow scrolling if too many hours */
+    justify-content: flex-start;
+    /* Align items to start for scrolling */
+    padding-bottom: 1.5rem;
+    /* Space for labels below bars */
+}
+
+.hour-chart .bar-item {
+    min-width: 25px;
+    /* Minimum width for each hour bar */
+    flex-grow: 0;
+    /* Don't grow, rely on min-width */
+    margin-right: 2px;
+    /* Spacing between hour bars */
+}
+
+.hour-chart .bar {
+    width: 80%;
+}
