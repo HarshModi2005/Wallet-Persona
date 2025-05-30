@@ -348,12 +348,7 @@ h1 {
 }
 
 @media (min-width: 768px) {
-  .dashboard-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 25px;
-  }
-  
+  /* .dashboard-grid styling previously here is removed or adjusted below */
   .full-width {
     grid-column: 1 / 3;
   }
@@ -406,10 +401,16 @@ h1 {
   }
 }
 
+/* Adjusted to always be a single vertical column */
 .dashboard-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(3, 1fr);
+    gap: 25px;
+    padding: 10px;
+  }
+  
+  /* Ensure cards within the grid behave as expected */
+  .dashboard-card {
   width: 100%;
 }
 

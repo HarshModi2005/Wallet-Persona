@@ -1,0 +1,265 @@
+.wallet-journey-container {
+    padding: 20px;
+    background-color: #f0f2f5;
+    border-radius: 8px;
+    margin-top: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.wallet-journey-container h3 {
+    color: #333;
+    text-align: center;
+    margin-bottom: 25px;
+    font-size: 1.8em;
+}
+
+.loading-state,
+.error-message,
+.wallet-journey-container>p {
+    text-align: center;
+    padding: 20px;
+    font-size: 1.1em;
+    color: #555;
+}
+
+.error-message {
+    color: #D8000C;
+    background-color: #FFD2D2;
+    border: 1px solid #D8000C;
+    border-radius: 4px;
+    padding: 10px;
+}
+
+/* Remove old .timeline, .timeline::before, .timeline-event, .timeline-node, .node-details etc. */
+/* Vis.js specific styles are no longer needed */
+
+/* Keep Modal Styles - they are independent of the timeline library */
+.modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1050;
+    /* Ensure modal is above react-chrono elements if necessary */
+}
+
+.modal-content {
+    background-color: white;
+    padding: 25px;
+    border-radius: 8px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    width: 90%;
+    max-width: 600px;
+    max-height: 80vh;
+    overflow-y: auto;
+    position: relative;
+    /* For close button positioning */
+}
+
+.modal-close-btn {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    background: transparent;
+    border: none;
+    font-size: 1.8rem;
+    font-weight: bold;
+    line-height: 1;
+    color: #555;
+    cursor: pointer;
+    padding: 0;
+}
+
+.modal-close-btn:hover {
+    color: #000;
+}
+
+.modal-content h4 {
+    /* Changed from h3 to h4 to match modal content */
+    margin-top: 0;
+    color: var(--primary-accent-color, #007bff);
+    margin-bottom: 15px;
+}
+
+.modal-content hr {
+    margin-top: 10px;
+    margin-bottom: 15px;
+    border-color: #eee;
+}
+
+.modal-content p {
+    margin-bottom: 10px;
+    line-height: 1.6;
+    color: #444;
+}
+
+.modal-content strong {
+    color: #111;
+}
+
+.modal-content a {
+    color: var(--primary-accent-color, #007bff);
+    text-decoration: none;
+}
+
+.modal-content a:hover {
+    text-decoration: underline;
+}
+
+/* Styles for transfer details within the modal */
+.transfer-detail-item {
+    padding: 10px;
+    background-color: #f9f9f9;
+    border: 1px solid #eee;
+    border-radius: 4px;
+    margin-bottom: 10px;
+}
+
+.transfer-detail-item p {
+    margin-bottom: 5px;
+    font-size: 0.9rem;
+}
+
+.transfer-detail-item img {
+    max-width: 80px;
+    /* Smaller images in modal */
+    border-radius: 4px;
+    margin-top: 5px;
+    border: 1px solid #ddd;
+}
+
+/* Contract Interaction Details in Modal */
+.contract-interaction-details h5,
+.mt-3 h5 {
+    /* For NFT/Token/Native transfers section titles */
+    color: var(--primary-accent-color-darker, #0056b3);
+    margin-top: 20px;
+    margin-bottom: 10px;
+    font-size: 1.1em;
+    padding-bottom: 5px;
+    border-bottom: 1px solid #eee;
+}
+
+.input-data-box {
+    background-color: #f0f2f5;
+    border: 1px solid #d1d9e0;
+    padding: 10px;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 0.85em;
+    word-break: break-all;
+    max-height: 100px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+}
+
+/* Keep Granularity Controls Styling - these now control react-chrono's mode */
+.granularity-controls {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+    padding: 10px;
+    background-color: var(--secondary-bg-color, #e9ecef);
+    /* Adjusted from previous theme vars */
+    border-radius: var(--border-radius-md, 6px);
+    box-shadow: var(--shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.1));
+}
+
+.granularity-controls button {
+    background-color: var(--primary-accent-color, #007bff);
+    color: var(--text-color-light, white);
+    border: none;
+    padding: 8px 15px;
+    margin: 0 5px;
+    border-radius: var(--border-radius-sm, 4px);
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.1s ease;
+    font-weight: 500;
+}
+
+.granularity-controls button:hover {
+    background-color: var(--primary-accent-hover-color, #0056b3);
+    transform: translateY(-1px);
+}
+
+.granularity-controls button.active {
+    background-color: var(--highlight-color, #28a745);
+    /* Adjusted from previous theme vars */
+    color: var(--primary-bg-color, white);
+    /* Adjusted for better contrast with green */
+    box-shadow: 0 0 10px rgba(40, 167, 69, 0.5);
+    /* Greenish shadow */
+}
+
+/* Keep Load More Button Styling */
+.load-more-button {
+    display: block;
+    margin: 30px auto 20px auto;
+    /* Increased top margin */
+    padding: 12px 25px;
+    /* Slightly larger */
+    background-color: #28a745;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1em;
+    font-weight: 500;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.load-more-button:hover {
+    background-color: #218838;
+    transform: translateY(-1px);
+}
+
+.load-more-button:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.loading-more {
+    text-align: center;
+    padding: 15px;
+    font-size: 1em;
+    color: #555;
+}
+
+/* react-chrono specific adjustments can be added here if needed */
+/* For example, to ensure the Chrono component fits well */
+/* The inline style on the div wrapping Chrono in the JS file already handles height dynamically */
+
+/* Ensure the react-chrono component container has some basic styling if not covered by its own classes */
+.wallet-journey-container .chrono-wrapper {
+    /* If react-chrono adds a wrapper with this class or similar */
+    margin-top: 20px;
+    margin-bottom: 20px;
+}
+
+/* You might want to style the cards or timeline elements further if the default theme is not enough.
+   react-chrono provides `theme` prop and `classNames` prop for deeper customization. 
+   Example for overriding some default styles if needed:
+*/
+
+/* Change card background and text color using react-chrono's theme prop is preferred */
+/* But if you must override with CSS: */
+/* 
+.timeline-card-content {
+    background-color: #fdfdfd !important;
+    color: #333 !important;
+}
+
+.timeline-title {
+    color: #0056b3 !important;
+}
+*/
+
+/* Removed styles for .aggregate-child-list, .child-event-preview-modal, etc. as they were part of the old Vis.js aggregation logic */
+/* Removed Vis.js specific item styling like .vis-item-custom-node, .vis-event-icon-container, etc. */
+/* Removed custom tooltip styling like .my-custom-vis-tooltip-wrapper, as react-chrono has its own tooltip/card display */

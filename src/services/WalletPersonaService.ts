@@ -1,4 +1,4 @@
-import { WalletDetails, Transaction, TokenBalance, NFT } from '../types/wallet.types';
+import { WalletDetails, Transaction, TokenBalance, NFT, WalletProfile } from '../types/wallet.types';
 import { GeminiAIService } from './GeminiAIService';
 import { ethers } from 'ethers';
 import { ImageGenerationService } from './ImageGenerationService';
@@ -31,6 +31,7 @@ export interface WalletPersona {
     tokens: string[];
     nfts: string[];
     dapps: string[];
+    actionableInsights: string[];
   };
   activitySummary: {
     lastActivityDate: string | null;
@@ -44,6 +45,9 @@ export interface WalletPersona {
     activityPattern: string;     // ASCII chart
     riskVisualization: string;   // ASCII representation
   };
+  userCategory: string;
+  tradingProfile: string;
+  profileSummary?: Partial<WalletProfile>;
 }
 
 export class WalletPersonaService {
@@ -59,16 +63,35 @@ export class WalletPersonaService {
     this.elevenLabsService = new ElevenLabsService(process.env.ELEVENLABS_API_KEY);
   }
 
-  async generatePersona(walletDetails: any): Promise<any> {
+  async generatePersona(walletDetails: WalletDetails): Promise<WalletPersona> {
     try {
-      const transactionSummaryForAI = this._createTransactionSummaryForAI(walletDetails.transactions || []);
-      const balanceString = (walletDetails.balance && typeof walletDetails.balance.native === 'string') 
-        ? walletDetails.balance.native 
-        : '0';
+      // Ensure all necessary parts of walletDetails are defined before passing to AI
+      const transactionsForAI = walletDetails.transactions || [];
+      const walletAddressForAI = walletDetails.address || 'N/A';
+      const profileForAI = walletDetails.profile || { 
+        address: walletAddressForAI, 
+        totalTransactions: 0, 
+        totalNftsHeld: 0, 
+        uniqueNftCollectionsCount: 0, 
+        topNftCollections: [] 
+      }; // Basic fallback for profile
+      const nftsForAI = walletDetails.nfts || [];
+      const balanceDetailsForAI = walletDetails.balance || { native: '0', usdValue: 0, totalTokenUsdValue: 0, grandTotalUsdValue: 0 };
+      const erc20TokensForAI = walletDetails.tokens || [];
+      const historicalActivityForAI = walletDetails.historicalActivity || [];
+      const keyEventsForAI = walletDetails.keyEvents || [];
+
 
       const aiAnalysis = await this.aiService.analyzeTransactions(
-        transactionSummaryForAI, 
-        balanceString
+        transactionsForAI,
+        walletAddressForAI,
+        profileForAI,
+        nftsForAI,
+        balanceDetailsForAI,
+        erc20TokensForAI,
+        historicalActivityForAI,
+        keyEventsForAI
+        // existingPersonaData can be added here if/when implemented
       );
       
       const deterministicRisk = this._calculateDeterministicRiskScore(walletDetails);
@@ -90,15 +113,19 @@ export class WalletPersonaService {
         finalFactors: finalRiskFactors
       };
       
-      const recommendations = await this.aiService.generateRecommendations({
-        assets: walletDetails.assets || {},
+      const recommendationsFromAI = await this.aiService.generateRecommendations({
+        assets: walletDetails.tokens?.map(t => ({ symbol: t.symbol, name: t.name, balance: t.balance })) || [],
         tradingProfile: aiAnalysis.tradingProfile,
-        activityLevel: aiAnalysis.activityLevel
+        activityLevel: aiAnalysis.activityLevel,
+        currentEthBalance: balanceDetailsForAI.native,
+        keyCategories: this.determineWalletCategory(aiAnalysis)
       });
 
       const formattedRecommendations = {
-        tokens: recommendations.tokens.map((token: any) => token.symbol),
-        apps: recommendations.dapps.map((dapp: any) => dapp.name)
+        tokens: recommendationsFromAI.tokens?.map((token: any) => token.symbol) || [],
+        dapps: recommendationsFromAI.dapps?.map((dapp: any) => dapp.name) || [],
+        actionableInsights: aiAnalysis.actionableInsights || [],
+        nfts: [] // Placeholder for NFT recommendations if added later
       };
 
       const calculatedWalletAge = this._calculateWalletAge(walletDetails.profile?.firstTransactionDate);
@@ -109,9 +136,8 @@ export class WalletPersonaService {
       const tempPersonaForImagePrompt = {
         category: this.determineWalletCategory(aiAnalysis),
         activityLevel: aiAnalysis.activityLevel,
-        tradingFrequency: aiAnalysis.tradingProfile === 'Frequent' ? 'High' : 
-                         (aiAnalysis.tradingProfile === 'Regular' ? 'Medium' : 'Low'),
-        riskAssessment: aiAnalysis.riskAssessment, // This is an object { level, score, factors }
+        tradingFrequency: aiAnalysis.tradingProfile,
+        riskAssessment: aiAnalysis.riskAssessment,
         bio: aiAnalysis.bio,
         avatarName: aiAnalysis.avatarName
       };
@@ -124,9 +150,28 @@ export class WalletPersonaService {
       const avatarImageUrl = await this.imageGenerationService.generateImageFromPrompt(avatarImagePrompt);
       const avatarVoiceUrl = await this.elevenLabsService.generateVoice(avatarIntroScript);
 
+      // Prepare profileSummary for Chatling
+      const profileSummaryForChatling: Partial<WalletProfile> = {
+        ensName: profileForAI.ensName,
+        unstoppableDomain: profileForAI.unstoppableDomain,
+        firstTransactionDate: profileForAI.firstTransactionDate,
+        lastTransactionDate: profileForAI.lastTransactionDate,
+        totalTransactions: profileForAI.totalTransactions,
+        totalNftsHeld: profileForAI.totalNftsHeld,
+        uniqueNftCollectionsCount: profileForAI.uniqueNftCollectionsCount,
+        uniqueTokenCount: profileForAI.uniqueTokenCount,
+        activeChains: profileForAI.activeChains?.slice(0,3)
+      };
+
+      // Use personaTags from AI analysis, fallback to a few deterministic ones if AI doesn't provide.
+      const finalTags = (aiAnalysis.personaTags && aiAnalysis.personaTags.length > 0) 
+        ? aiAnalysis.personaTags 
+        : this.generateMinimalDeterministicTags(walletDetails, aiAnalysis);
+
       return {
-        category: tempPersonaForImagePrompt.category,
-        tags: this.generateWalletTags(aiAnalysis, walletDetails, balanceString),
+        category: this.determineWalletCategory(aiAnalysis),
+        userCategory: aiAnalysis.userCategory || "Unknown",
+        tags: finalTags, // Use the refined tags
         bio: aiAnalysis.bio,
         avatarName: aiAnalysis.avatarName,
         avatarBio: aiAnalysis.avatarBio,
@@ -135,14 +180,20 @@ export class WalletPersonaService {
         avatarImageUrl,
         avatarVoiceUrl,
         riskScore: combinedRiskScore,
-        riskFactors: finalRiskFactors,
         riskFactorsDetails,
-        activityLevel: aiAnalysis.activityLevel,
-        tradingFrequency: aiAnalysis.tradingProfile === 'Frequent' ? 'High' : 
-                         aiAnalysis.tradingProfile === 'Regular' ? 'Medium' : 'Low',
+        activeLevel: aiAnalysis.activityLevel,
+        tradingProfile: aiAnalysis.tradingProfile,
         recommendations: formattedRecommendations,
         walletAge: calculatedWalletAge,
-        activitySummary: calculatedActivitySummary
+        activitySummary: calculatedActivitySummary,
+        visualization: {
+          balanceDistribution: 'Chart Placeholder',
+          activityPattern: 'Activity Placeholder',
+          riskVisualization: 'Risk Placeholder'
+        },
+        profileSummary: profileSummaryForChatling,
+        preferredTokens: aiAnalysis.suggestedTokens || [],
+        topCollections: profileForAI.topNftCollections?.map(c => c.name || c.contractAddress).slice(0,3) || []
       };
     } catch (error) {
       console.error('Error generating wallet persona:', error);
@@ -151,6 +202,10 @@ export class WalletPersonaService {
   }
 
   private _createTransactionSummaryForAI(transactions: Transaction[]): { inflow: number[], outflow: number[], months: string[] } {
+    // This method might become redundant if we pass full transactions or if GeminiAIService does this summary.
+    // For now, keeping it if other parts of generatePersona (like old recommendation engine) might use its output.
+    // If `aiService.analyzeTransactions` now takes raw transactions, this summary is mainly for the old `generateRecommendations`.
+    // Consider if `generateRecommendations` in `GeminiAIService` should also take raw transactions or a more detailed profile.
     if (!transactions || transactions.length === 0) {
       return { inflow: [], outflow: [], months: [] };
     }
@@ -280,23 +335,32 @@ export class WalletPersonaService {
     }
   }
 
-  private determineWalletCategory(analysis: any): string {
-    // Determine primary category based on AI analysis
-    const activityLevel = analysis.activityLevel;
-    const tradingProfile = analysis.tradingProfile;
-    
-    if (activityLevel === 'Very Active' && tradingProfile === 'Frequent') {
-      return 'Active Trader';
-    } else if (tradingProfile === 'Regular' || tradingProfile === 'Frequent') {
-      return 'DeFi Investor';
-    } else if (activityLevel === 'Casual') {
-      return 'Blockchain Explorer';
-    } else {
-      return 'Casual Holder';
+  private determineWalletCategory(analysis: any): string[] {
+    // Logic to determine categories based on AI analysis (tradingProfile, activityLevel, etc.)
+    // This should now use analysis.userCategory if available, or derive from others.
+    const categories: string[] = [];
+    if (analysis.userCategory) {
+        categories.push(analysis.userCategory);
     }
+    // Fallback or additional logic if userCategory is not comprehensive
+    if (analysis.tradingProfile?.toLowerCase().includes('nft')) categories.push("NFT Enthusiast");
+    if (analysis.tradingProfile?.toLowerCase().includes('defi')) categories.push("DeFi User");
+    if (categories.length === 0) categories.push("General User");
+    return [...new Set(categories)]; // Return unique categories
   }
 
-  private generateWalletTags(analysis: any, walletDetails: any, balanceString: string): string[] {
+  private generateWalletTags(analysis: any, walletDetails: WalletDetails, balanceString: string): string[] {
+    // This method is now primarily a fallback or can be used to *supplement* AI tags if needed.
+    // For the main persona object, we should prefer aiAnalysis.personaTags.
+    
+    // If AI provided specific personaTags, use them primarily.
+    if (analysis.personaTags && analysis.personaTags.length > 0) {
+        // Optional: add 1-2 crucial deterministic tags if not covered by AI and they are concise.
+        const deterministicTags = this.generateMinimalDeterministicTags(walletDetails, analysis);
+        return [...new Set([...analysis.personaTags, ...deterministicTags])].slice(0,5); // Combine and limit
+    }
+
+    // Fallback to old logic if AI personaTags are missing
     const tags: string[] = [];
     
     // Add activity level tag
@@ -324,36 +388,64 @@ export class WalletPersonaService {
       tags.push('Active Trader');
     }
     
-    return tags;
+    if (analysis.userCategory) tags.push(analysis.userCategory);
+    if (analysis.tradingProfile) tags.push(analysis.tradingProfile);
+    if (analysis.activityLevel) tags.push(analysis.activityLevel);
+
+    // Add tags from deterministic risk factors if they are concise
+    const deterministicRisk = this._calculateDeterministicRiskScore(walletDetails);
+    deterministicRisk.factors.forEach(factor => {
+        if (factor.length < 20 && !tags.some(t => factor.toLowerCase().includes(t.toLowerCase()) || t.toLowerCase().includes(factor.toLowerCase())) ) { // Keep tags relatively short & distinct
+            tags.push(factor.replace(/\s+/g, '-').replace(/\(.*?\)/g, '').replace(/降低风险|增加风险/g, '').trim().substring(0,15));
+        }
+    });
+    
+    return [...new Set(tags)].slice(0, 5); // Limit to 5 tags max, ensure uniqueness
   }
 
-  private getFallbackPersona(walletDetails: any): any {
-    // Default persona when AI analysis fails
-    const balance = parseFloat(walletDetails.balance?.native || '0');
-    const isLowBalance = balance < 0.01;
+  private getFallbackPersona(walletDetails: WalletDetails): WalletPersona {
     const calculatedWalletAge = this._calculateWalletAge(walletDetails.profile?.firstTransactionDate);
     const calculatedActivitySummary = this._calculateActivitySummary(walletDetails.transactions || []);
-    
+    const deterministicRisk = this._calculateDeterministicRiskScore(walletDetails);
+
     return {
-      category: 'Blockchain Explorer',
-      tags: ['Casual', isLowBalance ? 'Low Balance' : 'Medium Balance'],
-      bio: 'A blockchain explorer venturing through the Ethereum ecosystem. Casual on the network. Frequently interacts with DeFi protocols.',
-      avatarName: 'The Explorer',
-      avatarBio: 'Venturing through the digital frontier.',
-      avatarImagePrompt: 'A friendly cartoon character with a magnifying glass looking at a blockchain, simple and inviting.',
-      avatarIntroScript: "Hello! I'm The Explorer. Let's see what your wallet tells us about your adventures in the crypto world!",
-      avatarImageUrl: 'https://images.unsplash.com/photo-1639762681057-408e52192e50?q=80&w=1932&auto=format&fit=crop',
+      category: ["General User"],
+      userCategory: "General User",
+      tags: ["Needs Review", "General User"], // Simplified fallback tags
+      bio: "This wallet persona is currently under construction. More details will be available soon as more on-chain data is analyzed.",
+      avatarName: "Data Seeker",
+      avatarBio: "Analyzing the chain...",
+      avatarImagePrompt: "A futuristic abstract representation of data streams and blockchain nodes, blue and purple hues.",
+      avatarIntroScript: "Hello, I am still gathering information to fully introduce myself. Please check back later!",
+      avatarImageUrl: null,
       avatarVoiceUrl: null,
-      riskScore: 50,
-      riskFactors: ['Moderate wallet age', 'Some interaction with unverified tokens'],
-      activityLevel: 'Casual',
-      tradingFrequency: 'Low',
+      riskScore: deterministicRisk.score,
+      riskFactorsDetails: {
+        deterministicScore: deterministicRisk.score,
+        deterministicFactors: deterministicRisk.factors,
+        aiScore: 0, 
+        aiFactors: [], 
+        combinedScore: deterministicRisk.score, 
+        finalFactors: deterministicRisk.factors,
+      },
+      activeLevel: "Unknown",
+      tradingProfile: "Unknown",
       recommendations: {
-        tokens: ['ETH', 'LINK', 'UNI', 'ARB', 'MATIC'],
-        apps: ['Uniswap', 'OpenSea', 'Lido', 'Aave']
+        tokens: ["ETH", "WBTC"],
+        nfts: ["Consider exploring popular NFT marketplaces like OpenSea."],
+        dapps: ["Major DEX (e.g., Uniswap)", "Major Lending Protocol (e.g., Aave)"],
+        actionableInsights: ["Ensure your wallet software is up to date."]
       },
       walletAge: calculatedWalletAge,
-      activitySummary: calculatedActivitySummary
+      activitySummary: calculatedActivitySummary,
+      visualization: { 
+        balanceDistribution: "No data available for chart.", 
+        activityPattern: "No data available for chart.", 
+        riskVisualization: "Risk assessment pending data." 
+      }, 
+      profileSummary: undefined,
+      preferredTokens: [],
+      topCollections: []
     };
   }
 
@@ -465,42 +557,28 @@ export class WalletPersonaService {
     return { score, factors };
   }
 
-  /**
-   * Generate a complete wallet persona based on wallet details
-   */
-  public generatePersonaOld(walletDetails: WalletDetails): WalletPersona {
-    const category = this.determineCategory(walletDetails);
-    const riskScore = this.calculateRiskScore(walletDetails);
-    const activeLevel = this.determineActivityLevel(walletDetails.transactions);
-    const preferredTokens = this.getPreferredTokens(walletDetails.tokens);
-    const walletAge = this._calculateWalletAge(walletDetails.profile?.firstTransactionDate);
-    const topCollections = this.getTopCollections(walletDetails.nfts);
-    const activitySummary: WalletPersona['activitySummary'] = this._calculateActivitySummary(walletDetails.transactions);
-    const tags = this.generateTags(walletDetails, category, activeLevel);
-    const recommendations = this.generateRecommendations(walletDetails, category);
-    const visualization = this.generateVisualizations(walletDetails, riskScore);
+  // New helper method for minimal deterministic tags if AI doesn't provide them
+  private generateMinimalDeterministicTags(walletDetails: WalletDetails, aiAnalysis: any): string[] {
+    const tags: string[] = [];
+    if (aiAnalysis.activityLevel) tags.push(aiAnalysis.activityLevel);
+    else {
+        const activity = this.determineActivityLevel(walletDetails.transactions || []);
+        if (activity) tags.push(activity);
+    }
+
+    const firstTxDate = walletDetails.profile?.firstTransactionDate;
+    if (firstTxDate) {
+        const ageInMs = new Date().getTime() - new Date(firstTxDate).getTime();
+        if (ageInMs < 30 * 24 * 60 * 60 * 1000) { // Less than 30 days old
+            tags.push("New Wallet");
+        }
+    }
+    // Add one or two more very generic but distinct tags if needed
+    if (walletDetails.nfts && walletDetails.nfts.length > 5) tags.push("NFT Holder");
     
-    return {
-      category,
-      activeLevel,
-      riskScore,
-      preferredTokens,
-      walletAge,
-      topCollections,
-      bio: this.generateBio(walletDetails, category, activeLevel, preferredTokens, topCollections),
-      avatarName: "The Classic User",
-      avatarBio: "An Ethereum user from the early days.",
-      avatarImagePrompt: "Pixel art character representing an early Ethereum adopter.",
-      avatarIntroScript: "I am the Classic User. I've seen the blockchain evolve. What stories does your wallet hold?",
-      avatarImageUrl: 'https://images.unsplash.com/photo-1639762681057-408e52192e50?q=80&w=1932&auto=format&fit=crop',
-      avatarVoiceUrl: null,
-      tags,
-      recommendations,
-      activitySummary,
-      visualization
-    };
+    return [...new Set(tags)].slice(0, 5); // Ensure unique and limit count
   }
-  
+
   /**
    * Determine wallet categories based on activity patterns
    */
@@ -887,7 +965,8 @@ export class WalletPersonaService {
     const recommendations = {
       tokens: [] as string[],
       nfts: [] as string[],
-      dapps: [] as string[]
+      dapps: [] as string[],
+      actionableInsights: [] as string[]
     };
     
     // For empty or inactive wallets, provide starter recommendations
@@ -895,6 +974,7 @@ export class WalletPersonaService {
       recommendations.tokens = ['ETH', 'USDC', 'USDT', 'DAI', 'WBTC'];
       recommendations.dapps = ['Uniswap', 'Aave', 'Lido', 'ENS', 'OpenSea'];
       recommendations.nfts = ['ENS Domains', 'Pudgy Penguins', 'Base Ghosts', 'Checks', 'Moonbirds'];
+      recommendations.actionableInsights = ["Ensure your wallet software is up to date.", "Consider diversifying your portfolio."];
       return recommendations;
     }
     
@@ -939,6 +1019,9 @@ export class WalletPersonaService {
     recommendations.tokens = [...new Set(recommendations.tokens)].slice(0, 5);
     recommendations.nfts = [...new Set(recommendations.nfts)].slice(0, 5);
     recommendations.dapps = [...new Set(recommendations.dapps)].slice(0, 5);
+    
+    // Add actionable insights
+    recommendations.actionableInsights = ["Ensure your wallet software is up to date.", "Consider diversifying your portfolio."];
     
     return recommendations;
   }

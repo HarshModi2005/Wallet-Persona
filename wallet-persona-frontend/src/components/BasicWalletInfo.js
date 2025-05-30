@@ -73,7 +73,7 @@ const BasicWalletInfo = ({ details }) => {
                             {profile.unstoppableDomain && <p><strong>Unstoppable:</strong> {profile.unstoppableDomain}</p>}
                             <hr />
                             <p><strong>Balance:</strong> {parseFloat(balance.native).toFixed(5)} ETH</p>
-                            <p><strong>Value:</strong> ${balance.usdValue ? balance.usdValue.toFixed(2) : 'N/A'}</p>
+                            <p><strong>Value:</strong> ${balance.grandTotalUsdValue ? balance.grandTotalUsdValue.toFixed(2) : (balance.usdValue ? balance.usdValue.toFixed(2) : 'N/A')}</p>
                         </div>
                     </div>
                 </div>

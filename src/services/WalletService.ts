@@ -11,7 +11,13 @@ import {
   WalletProfile,
   DeFiPosition,
   HistoricalActivityMetric,
-  KeyEvent
+  KeyEvent,
+  TimelineEvent,
+  WalletJourneyData,
+  NftTransferDetail,
+  Erc20TransferDetail,
+  NativeTransferDetail,
+  ContractInteractionDetail
 } from '../types/wallet.types';
 import { TransactionAnalyzerService, CoreTransactionAnalysis } from './TransactionAnalyzerService';
 
@@ -181,8 +187,8 @@ export class WalletService {
           // Spam check based on keywords
           const tokenNameLower = (tokenItem.name || '').toLowerCase();
           const tokenSymbolLower = (tokenItem.symbol || '').toLowerCase();
-          const spamKeywords = [
-              'reward', 'claim', 'airdrop', 'gift', '.io', '.net', '.xyz', '.site',
+      const spamKeywords = [
+        'reward', 'claim', 'airdrop', 'gift', '.io', '.net', '.xyz', '.site', 
               'www', '.com', 'http', '(via', 't.me'
           ];
 
@@ -267,7 +273,7 @@ export class WalletService {
         chain: "0x1",
       });
       // console.log(`[WalletService] getNFTs - Moralis SDK response for ${address} (raw):`, JSON.stringify(response.raw, null, 2));
-      
+
       const result = response.result || [];
       // console.log(`[WalletService] getNFTs - RAW NFT OBJECT FROM MORALIS SDK (sample first one for ${address}):`, result.length > 0 ? JSON.stringify(result[0].raw, null, 2) : "No NFTs found");
 
@@ -1064,6 +1070,252 @@ export class WalletService {
         console.error(`[WalletService] _fetchMissingTokenPriceWithMoralis - Additional error details exist for ${contractAddress} (not fully logged to avoid circular JSON issues). Status: ${error.details.status}`);
       }
       return null;
+    }
+  }
+
+  async getWalletJourney(address: string, chain: string = '0x1', limit: number = 50, cursor?: string, fromDate?: string, toDate?: string, order: 'ASC' | 'DESC' = 'DESC', nftMetadata: boolean = true): Promise<WalletJourneyData> {
+    try {
+      console.log(`[WalletService getWalletJourney] Fetching wallet journey for ${address} on chain ${chain} with limit ${limit}, cursor: ${cursor}, fromDate: ${fromDate}, toDate: ${toDate}, order: ${order}, nftMetadata: ${nftMetadata}`);
+
+      let parsedFromDate: Date | undefined = undefined;
+      if (fromDate) {
+        const d = new Date(fromDate);
+        if (!isNaN(d.getTime())) {
+          parsedFromDate = d;
+          console.log(`[WalletService getWalletJourney] Parsed fromDate: ${parsedFromDate.toISOString()}`);
+        } else {
+          console.warn(`[WalletService getWalletJourney] Invalid fromDate string provided: ${fromDate}. Ignoring.`);
+        }
+      }
+
+      let parsedToDate: Date | undefined = undefined;
+      if (toDate) {
+        const d = new Date(toDate);
+        if (!isNaN(d.getTime())) {
+          parsedToDate = d;
+          console.log(`[WalletService getWalletJourney] Parsed toDate: ${parsedToDate.toISOString()}`);
+        } else {
+          console.warn(`[WalletService getWalletJourney] Invalid toDate string provided: ${toDate}. Ignoring.`);
+        }
+      }
+      
+      console.log(`[WalletService getWalletJourney] Calling Moralis.EvmApi.wallets.getWalletHistory with params:`, { address, chain, limit, cursor, fromDate: parsedFromDate, toDate: parsedToDate, order, nftMetadata });
+
+      const response = await Moralis.EvmApi.wallets.getWalletHistory({
+        address,
+        chain,
+        limit,
+        cursor,
+        fromDate: parsedFromDate, 
+        toDate: parsedToDate,     
+        order,
+        nftMetadata,
+      });
+
+      // rawResult is directly the array of transactions from response.result
+      const rawTransactions: any[] = response?.result || [];
+      console.log(`[WalletService getWalletJourney] Moralis raw response transaction count: ${rawTransactions.length}`);
+      console.log(`[WalletService getWalletJourney] Moralis raw response cursor: ${response?.pagination?.cursor}`);
+
+      if (rawTransactions.length === 0) {
+        console.log('[WalletService getWalletJourney] No transactions found in Moralis response.');
+        return { events: [], nextCursor: response?.pagination?.cursor || null, hasMore: !!response?.pagination?.cursor };
+      }
+      
+      console.log(`[WalletService getWalletJourney] Received ${rawTransactions.length} raw transactions from Moralis.`);
+
+      const events: TimelineEvent[] = rawTransactions.map((tx: any, index: number): TimelineEvent | null => {
+        try {
+          // Logging to see the structure of tx directly
+          if (index === 0) {
+            console.log(`[WalletService getWalletJourney] RAW MORALIS TX OBJECT (HISTORY API, index 0, direct access type: ${typeof tx}):`, JSON.stringify(tx, null, 2).substring(0, 1000) + "...");
+            Object.keys(tx).forEach(key => {
+              if (key.toLowerCase().includes('address') || key.toLowerCase().includes('status') || key.toLowerCase().includes('fee')) {
+                // @ts-ignore
+                console.log(`[WalletService getWalletJourney] tx instance key sample: ${key} = ${tx[key]}`);
+              }
+            });
+          }
+
+          const finalTimestamp = tx.blockTimestamp || tx.block_timestamp; // Prefer camelCase from instance
+          const finalBlockNumber = tx.blockNumber || tx.block_number;     // Prefer camelCase from instance
+
+          if (!finalTimestamp) {
+            console.warn(`[WalletService getWalletJourney] Missing timestamp for tx at index ${index}, hash: ${tx.hash}. Skipping.`);
+            return null;
+          }
+
+          const details: TimelineEvent['details'] = {
+            fromAddress: tx.fromAddress?.lowercase || '',
+            fromAddressLabel: tx.fromAddressLabel || null,
+            fromAddressEntity: tx.fromAddressEntity || null,
+            fromAddressEntityLogo: tx.fromAddressEntityLogo || null,
+            toAddress: tx.toAddress?.lowercase || '',
+            toAddressLabel: tx.toAddressLabel || null,
+            toAddressEntity: tx.toAddressEntity || null,
+            toAddressEntityLogo: tx.toAddressEntityLogo || null,
+            value: tx.value || "0", // value seems to be consistently lowercase string
+            transactionFee: tx.transactionFee || "0",
+            gasPrice: tx.gasPrice,
+            methodLabel: tx.methodLabel || null,
+            nftTransfers: [], // Will be populated below
+            erc20Transfers: [], // Will be populated below
+            nativeTransfers: [], // Will be populated below
+            contractInteraction: undefined, // Will be populated if applicable
+            possibleSpam: tx.possibleSpam || false,
+            receiptStatus: (tx.receiptStatus === "1" ? "1" : "0") as '1' | '0',
+            displayValue: undefined, // To be set later based on context
+            displayValueToken: undefined, // To be set later
+          };
+
+          // Populate Native Transfers
+          if (tx.nativeTransfers && Array.isArray(tx.nativeTransfers)) {
+            details.nativeTransfers = tx.nativeTransfers.map((nt: any): NativeTransferDetail => {
+              // console.log(`[WalletService getWalletJourney] RAW Native Transfer object (inside map): ${JSON.stringify(nt)}`);
+              return {
+                fromAddress: nt.from_address || '', // These are snake_case in the Moralis native_transfers array elements
+                toAddress: nt.to_address || '',     // These are snake_case
+                fromAddressLabel: nt.from_address_label || undefined,
+                toAddressLabel: nt.to_address_label || undefined,
+                value: nt.value || '0',
+                valueFormatted: nt.value_formatted,
+                direction: nt.direction,
+                tokenSymbol: nt.token_symbol,
+                tokenLogo: nt.token_logo,
+                internalTransaction: !!nt.internal_transaction
+              };
+            });
+          }
+
+          // Populate ERC20 Transfers
+          if (tx.erc20Transfers && Array.isArray(tx.erc20Transfers)) {
+            details.erc20Transfers = tx.erc20Transfers.map((t: any) => ({
+              tokenSymbol: t.tokenSymbol,
+              tokenLogo: t.tokenLogo,
+              tokenName: t.tokenName,
+              tokenAddress: t.tokenAddress?.lowercase || t.tokenAddress,
+              value: t.value,
+              valueFormatted: t.valueFormatted,
+              direction: t.direction,
+              fromAddress: t.fromAddress?.lowercase || t.fromAddress,
+              toAddress: t.toAddress?.lowercase || t.toAddress,
+            }));
+          }
+
+          // Populate NFT Transfers
+          if (tx.nftTransfers && Array.isArray(tx.nftTransfers)) {
+            details.nftTransfers = tx.nftTransfers.map((n: any) => ({
+              tokenAddress: n.tokenAddress?.lowercase || n.tokenAddress,
+              tokenId: n.tokenId,
+              value: n.value,
+              amount: n.amount,
+              contractType: n.contractType,
+              direction: n.direction,
+              name: n.normalizedMetadata?.name,
+              image: n.normalizedMetadata?.image,
+              collectionLogo: n.collectionLogo, // This might be directly on 'n' from Moralis History
+              fromAddress: n.fromAddress?.lowercase || n.fromAddress,
+              toAddress: n.toAddress?.lowercase || n.toAddress,
+            }));
+          }
+
+          let summary = tx.summary || ''; // Use Moralis summary if available
+
+          // Set displayValue and displayValueToken based on category and transfers
+          // This logic can be expanded significantly
+          if (tx.category?.toLowerCase() === 'nft sale' || tx.category?.toLowerCase() === 'nft purchase') {
+            const nftTransfer = details.nftTransfers?.[0];
+            if (nftTransfer) {
+              summary = `${tx.category === 'nft sale' ? 'Sold' : 'Bought'} ${nftTransfer.name || `NFT (${nftTransfer.tokenAddress?.substring(0,6)}...#${nftTransfer.tokenId})`}`;
+              // For sales/purchases, the main tx.value is often the payment
+              if (tx.value && tx.value !== "0") {
+                  details.displayValue = ethers.formatEther(tx.value) + " ETH";
+                  details.displayValueToken = "ETH";
+              } else if (nftTransfer.value && nftTransfer.value !== "0") { // Fallback to NFT transfer value if tx.value is 0
+                  details.displayValue = ethers.formatEther(nftTransfer.value) + " ETH"; // Assuming NFT value is in ETH for now
+                  details.displayValueToken = "ETH";
+              }
+            }
+          } else if (tx.category?.toLowerCase() === 'erc20 transfer') {
+            const erc20Transfer = details.erc20Transfers?.[0];
+            if (erc20Transfer) {
+              summary = `${erc20Transfer.direction === 'receive' ? 'Received' : 'Sent'} ${erc20Transfer.valueFormatted || erc20Transfer.value} ${erc20Transfer.tokenSymbol}`;
+              details.displayValue = `${erc20Transfer.valueFormatted || erc20Transfer.value}`;
+              details.displayValueToken = erc20Transfer.tokenSymbol;
+            }
+          } else if (tx.category?.toLowerCase() === 'native transfer' || (tx.value && tx.value !== "0" && (!tx.category || tx.category.toLowerCase() === 'receive' || tx.category.toLowerCase() === 'send'))) {
+             // For native transfers or simple sends/receives not otherwise categorized
+            if (tx.value && tx.value !== "0") {
+                details.displayValue = ethers.formatEther(tx.value) + " ETH";
+                details.displayValueToken = "ETH";
+                // Summary might be already good from Moralis, or construct one:
+                // const direction = tx.fromAddress?.lowercase === address.toLowerCase() ? 'Sent' : 'Received';
+                // summary = `${direction} ${details.displayValue}`;
+            }
+          } else if (tx.category?.toLowerCase() === 'token swap') {
+            // For swaps, show what was sent and received if possible
+            const sentToken = details.erc20Transfers?.find(t => t.direction === 'send');
+            const receivedToken = details.erc20Transfers?.find(t => t.direction === 'receive');
+            if (sentToken && receivedToken) {
+                summary = `Swapped ${sentToken.valueFormatted || sentToken.value} ${sentToken.tokenSymbol} for ${receivedToken.valueFormatted || receivedToken.value} ${receivedToken.tokenSymbol}`;
+                details.displayValue = summary; // Using the summary as the main display value here
+            } else if (sentToken) {
+                summary = `Sent ${sentToken.valueFormatted || sentToken.value} ${sentToken.tokenSymbol} in swap`;
+            } else if (receivedToken) {
+                summary = `Received ${receivedToken.valueFormatted || receivedToken.value} ${receivedToken.tokenSymbol} in swap`;
+            }
+          } else if (tx.value && tx.value !== "0") { // General fallback if value exists
+             details.displayValue = ethers.formatEther(tx.value) + " ETH";
+             details.displayValueToken = "ETH";
+          }
+
+
+          if (tx.category?.toLowerCase() === 'contract interaction' && tx.inputData) {
+            details.contractInteraction = {
+              inputData: tx.inputData,
+              methodSignature: tx.inputData?.substring(0, 10), // First 4 bytes
+            };
+          }
+
+
+          const mappedEvent: TimelineEvent = {
+            hash: tx.hash,
+            timestamp: finalTimestamp,
+            blockNumber: finalBlockNumber?.toString(), // Ensure string
+            category: tx.category || 'Unknown',
+            summary: summary,
+            details: details,
+          };
+          
+          console.log(`[WalletService getWalletJourney] Mapped event.timestamp for hash ${tx.hash}: "${mappedEvent.timestamp}" (type: ${typeof mappedEvent.timestamp}), blockNumber: "${mappedEvent.blockNumber}" (type: ${typeof mappedEvent.blockNumber})`);
+          return mappedEvent;
+
+        } catch (mapError: any) {
+          console.error(`[WalletService getWalletJourney] Error mapping transaction at index ${index}:`, JSON.stringify(tx).substring(0, 200) + "...", `Error: ${mapError.message}`);
+          return null; 
+        }
+      }).filter((event): event is TimelineEvent => event !== null); 
+      
+      const nextCursor = response?.pagination?.cursor || null;
+      const hasMore = !!nextCursor;
+
+      console.log(`[WalletService getWalletJourney] Successfully mapped ${events.length} events. Next cursor: ${nextCursor}, Has more: ${hasMore}`);
+      
+      // Log first event if exists
+      if (events.length > 0) {
+        console.log(`[WalletService getWalletJourney] First mapped event (full object sample after attempting to map): ${JSON.stringify(events[0], null, 2)}...`);
+      }
+
+
+      return { events: events.filter(e => e !== null) as TimelineEvent[], nextCursor: response?.pagination?.cursor || null, hasMore: !!response?.pagination?.cursor };
+
+    } catch (error: any) {
+      console.error('[WalletService getWalletJourney] Error fetching wallet journey:', error.message);
+      console.error('[WalletService getWalletJourney] Full error object:', JSON.stringify(error, null, 2));
+      if (error.isMoralisError) {
+        console.error('[WalletService getWalletJourney] Moralis Error Details:', JSON.stringify(error.details, null, 2));
+      }
+      throw new Error(`Failed to fetch wallet journey: ${error.message}`);
     }
   }
 } 

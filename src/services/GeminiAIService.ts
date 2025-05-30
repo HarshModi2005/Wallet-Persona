@@ -1,4 +1,5 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { WalletBalance, TokenBalance, HistoricalActivityMetric, KeyEvent, WalletProfile, NFT } from '../types/wallet.types';
 
 export class GeminiAIService {
   private genAI: GoogleGenerativeAI;
@@ -15,47 +16,89 @@ export class GeminiAIService {
   /**
    * Analyze wallet transactions and generate insights
    */
-  async analyzeTransactions(transactions: any, balance: string): Promise<any> {
+  async analyzeTransactions(
+    transactions: any,
+    walletAddress: string,
+    profile: WalletProfile,
+    nfts: NFT[],
+    balanceDetails: WalletBalance,
+    erc20Tokens: TokenBalance[],
+    historicalActivity: HistoricalActivityMetric[],
+    keyEvents: KeyEvent[],
+    existingPersonaData?: any
+  ): Promise<any> {
     if (!this.genAI || !process.env.GEMINI_API_KEY) {
-      return this.getDefaultAnalysis(transactions, balance);
+      return this.getDefaultAnalysis(transactions, walletAddress, profile, nfts, balanceDetails, erc20Tokens, historicalActivity, keyEvents);
     }
 
     try {
+      const tokenSummary = erc20Tokens.slice(0, 10).map(t => ({ symbol: t.symbol, name: t.name, balance: t.balance, usdValue: t.usdValueFormatted }));
+      const historicalSummary = historicalActivity.slice(-6);
+      const keyEventsSummary = keyEvents.slice(0, 5).map(e => ({ type: e.eventType, description: e.description, date: new Date(e.timestamp * 1000).toISOString().split('T')[0] }));
+
       const prompt = `
-        As an AI that embodies and speaks for an Ethereum wallet, analyze the following wallet data for me to understand myself, but also provide some objective analysis for others to see.
+        As an AI that embodies and speaks for an Ethereum wallet, analyze the following comprehensive wallet data for me to understand myself, but also provide some objective analysis for others to see.
         
-        Balance: ${balance} ETH
-        Transaction history (last 6 months): ${JSON.stringify(transactions)} // This is for your internal analysis only, do not reference it directly in the bio.
+        Wallet Address: ${walletAddress}
+
+        My Core Profile:
+        ${profile.ensName ? `- ENS Name: ${profile.ensName}` : ''}
+        ${profile.unstoppableDomain ? `- Unstoppable Domain: ${profile.unstoppableDomain}` : ''}
+        - First Transaction Date: ${profile.firstTransactionDate ? new Date(profile.firstTransactionDate).toLocaleDateString() : 'N/A'}
+        - Last Transaction Date: ${profile.lastTransactionDate ? new Date(profile.lastTransactionDate).toLocaleDateString() : 'N/A'}
+        - Total Transactions: ${profile.totalTransactions}
+        - Total NFTs Held: ${profile.totalNftsHeld}
+        - Unique NFT Collections: ${profile.uniqueNftCollectionsCount}
+
+        My Financial Snapshot:
+        - Native Balance (ETH): ${balanceDetails.native}
+        - Native Balance (USD): $${balanceDetails.usdValue.toFixed(2)}
+        - Total ERC20 Token Value (USD): $${(balanceDetails.totalTokenUsdValue ?? 0).toFixed(2)}
+        - Grand Total Wallet Value (USD): $${(balanceDetails.grandTotalUsdValue ?? 0).toFixed(2)}
+        - Top ERC20 Tokens (summary): ${JSON.stringify(tokenSummary)}
+
+        My Activity Patterns:
+        - Recent Monthly Transaction Counts (up to last 6 months): ${JSON.stringify(historicalSummary)}
+        - Key Wallet Journey Events (highlights): ${JSON.stringify(keyEventsSummary)}
         
+        My Full Transaction History (condensed for AI processing, do not directly reference in bio): ${JSON.stringify(transactions.slice(0, 20).map((tx: any) => ({ hash: tx.hash, type: tx.type, value: tx.value, timestamp: tx.timestamp })))}... and ${transactions.length > 20 ? transactions.length -20 : 0} more.
+        My NFT Collection (summary): ${JSON.stringify(nfts.slice(0,10).map(nft => ({name: nft.name, collection: nft.collectionName})))}
+
         Please provide the following information:
 
         Objective Analysis (for display to others, use third-person):
-        1.  A trading behavior profile (e.g., "Frequent Trader", "Occasional Large Swaps", "Long-term Holder").
-        2.  An activity level classification (e.g., "Very Active", "Moderately Active", "Casual User", "Inactive").
+        1.  A trading behavior profile (e.g., "Frequent Trader", "NFT Enthusiast"). This should be a concise phrase, ideally 2-4 words.
+        2.  An activity level classification (e.g., "Very Active", "Casual User"). This should be a concise phrase, ideally 2-4 words.
         3.  A risk assessment:
            a. A risk score from 0 (very low risk) to 100 (very high risk).
            b. A qualitative risk level (Very Low, Low, Medium, High, Very High) that matches the score.
-           c. Key factors contributing to this risk assessment (e.g., interaction with unverified contracts, large single transactions, wallet age, diversification).
+           c. Key factors contributing to this risk assessment (e.g., interaction with unverified contracts, large single transactions, wallet age, diversification, token types held, NFT activity).
+        4.  Potential user category (e.g., "DeFi Power User", "NFT Collector & Trader"). This should be a concise phrase, ideally 2-4 words.
 
         My Persona (written in the first person, as if I, the wallet persona, am speaking):
-        4.  My main persona description/bio. This is where I introduce myself. It should be around 50-70 words. Example: "Hi, I'm DeFi Voyager! I'm all about exploring the latest in decentralized finance, always on the lookout for promising new projects and high-yield opportunities. I regularly engage with DEXes and lending protocols."
-        5.  An engaging, very short (1-2 sentences, max 20 words) avatar bio for display directly under my avatar image. Example: "I'm DeFi Voyager! Chasing alpha and exploring new frontiers."
-        6.  A cool, catchy, friendly, and representative avatar name for myself (2-3 words, e.g., 'Captain Crypto', 'Token Friend', 'Pixel Pal', 'DeFi Dreamer', 'NFT Navigator'). Make it sound approachable.
+        5.  My main persona description/bio. This is where I introduce myself, weaving in aspects of my profile, finances, and activity. It should be around 60-80 words. Example: "Hey there, I'm 'ETH Explorer'! Born on [First Tx Date], I've been navigating the Ethereum seas, collecting [Number] unique NFTs and carefully managing my [Native Balance] ETH. I enjoy [activity inferred from transactions/NFTs]."
+        6.  An engaging, very short (1-2 sentences, max 25 words) avatar bio for display directly under my avatar image. Example: "I'm 'ETH Explorer'! Uncovering gems in the digital frontier."
+        7.  A cool, catchy, friendly, and representative avatar name for myself (2-3 words, e.g., 'Captain Crypto', 'Token Friend', 'Pixel Pal', 'DeFi Dreamer', 'NFT Navigator'). Make it sound approachable and reflective of the wallet's character.
 
-        Suggestions (objective):
-        7.  Suggested tokens this wallet owner might be interested in (provide as a list of symbols).
-        8.  Relevant dApps this wallet owner should explore (provide as a list of names).
+        Suggestions (objective, based on the entire profile):
+        8.  Suggested tokens this wallet owner might be interested in (provide as a list of symbols, consider existing holdings and profile).
+        9.  Relevant dApps or platforms this wallet owner should explore (provide as a list of names, consider activity and interests).
+        10. Up to 3 actionable insights or tips for the wallet owner based on their profile and activity (e.g., "Consider diversifying your NFT collections.", "Explore staking options for your ETH holdings.").
+        11. Generate 3-5 concise, descriptive \`personaTags\` (each tag 2-3 words, unique, non-repeating) that capture the wallet\'s main characteristics based on all the data provided. These tags will be shown in the UI.
 
         Format your response as a JSON object with these fields:
         {
           "tradingProfile": string, // Objective, third-person description
           "activityLevel": string, // Objective, third-person description
+          "userCategory": string, // Objective, third-person
           "riskAssessment": { "level": string, "score": number, "factors": string[] }, // Objective
           "bio": string, // First person, main bio for the persona to introduce itself
           "avatarName": string, // The friendly name for the persona
           "avatarBio": string, // First person, short bio for avatar display
           "suggestedTokens": string[],
-          "suggestedDapps": string[]
+          "suggestedDapps": string[],
+          "actionableInsights": string[],
+          "personaTags": string[] // Added new field for persona tags
         }
       `;
 
@@ -72,15 +115,15 @@ export class GeminiAIService {
           return JSON.parse(jsonString);
       } else {
           console.warn('Could not find valid JSON object in Gemini response for analyzeTransactions. Response text:', text);
-          return this.getDefaultAnalysis(transactions, balance);
+          return this.getDefaultAnalysis(transactions, walletAddress, profile, nfts, balanceDetails, erc20Tokens, historicalActivity, keyEvents);
         }
       } catch (e) {
         console.error('Error parsing JSON from Gemini response for analyzeTransactions. Error:', e, 'Response text:', text);
-        return this.getDefaultAnalysis(transactions, balance);
+        return this.getDefaultAnalysis(transactions, walletAddress, profile, nfts, balanceDetails, erc20Tokens, historicalActivity, keyEvents);
       }
     } catch (error) {
       console.error('Error generating AI analysis:', error);
-      return this.getDefaultAnalysis(transactions, balance);
+      return this.getDefaultAnalysis(transactions, walletAddress, profile, nfts, balanceDetails, erc20Tokens, historicalActivity, keyEvents);
     }
   }
 
@@ -310,77 +353,42 @@ export class GeminiAIService {
   /**
    * Default analysis when Gemini API is unavailable
    */
-  private getDefaultAnalysis(transactions: any, balance: string): any {
-    // Analyze inflow/outflow to determine activity level
-    const totalInflow = transactions.inflow.reduce((sum: number, val: number) => sum + val, 0);
-    const totalOutflow = transactions.outflow.reduce((sum: number, val: number) => sum + val, 0);
-    const totalActivity = totalInflow + totalOutflow;
-    
-    let activityLevel = 'Inactive';
-    if (totalActivity > 3) {
-      activityLevel = 'Very Active';
-    } else if (totalActivity > 1.5) {
-      activityLevel = 'Active';
-    } else if (totalActivity > 0.5) {
-      activityLevel = 'Casual';
-    }
-    
-    // Determine trading frequency
-    const nonZeroMonths = transactions.inflow.filter((val: number) => val > 0).length + 
-                          transactions.outflow.filter((val: number) => val > 0).length;
-    let tradingProfile = 'Infrequent';
-    if (nonZeroMonths > 8) {
-      tradingProfile = 'Frequent';
-    } else if (nonZeroMonths > 4) {
-      tradingProfile = 'Regular';
-    } else if (nonZeroMonths > 2) {
-      tradingProfile = 'Occasional';
-    }
-    
-    // Calculate risk assessment
-    let riskLevel = 'Medium';
-    let riskScore = 50;
-    let riskFactors = ['Moderate wallet age'];
-    
-    // Adjust based on activity
-    if (totalActivity > 2) {
-      riskScore += 10;
-      riskFactors.push('High transaction volume');
-    } else if (totalActivity < 0.5) {
-      riskScore -= 10;
-      riskFactors.push('Low transaction volume');
-    }
-    
-    // Adjust based on balance
-    const balanceNum = parseFloat(balance);
-    if (balanceNum < 0.01) {
-      riskScore -= 15;
-      riskFactors.push('Low balance');
-    } else if (balanceNum > 1) {
-      riskScore += 15;
-      riskFactors.push('Significant holdings');
-    }
-    
-    // Finalize risk level
-    if (riskScore >= 70) {
-      riskLevel = 'High';
-    } else if (riskScore <= 30) {
-      riskLevel = 'Low';
-    }
-    
+  private getDefaultAnalysis(
+    transactions: any, 
+    walletAddress: string,
+    profile: WalletProfile,
+    nfts: NFT[],
+    balanceDetails: WalletBalance,
+    erc20Tokens: TokenBalance[],
+    historicalActivity: HistoricalActivityMetric[],
+    keyEvents: KeyEvent[]
+  ): any {
+    const activityLevel = profile.totalTransactions > 100 ? "Active" : "Casual User";
+    const riskScore = 30 + Math.floor(Math.random() * 40); // Random score between 30-70
+    let riskLevel = "Medium";
+    if (riskScore < 40) riskLevel = "Low";
+    else if (riskScore > 60) riskLevel = "High";
+
+    const defaultBio = `I'm a wallet on the Ethereum blockchain (${walletAddress.substring(0,6)}...). I've made ${profile.totalTransactions} transactions and currently hold ${balanceDetails.native} ETH.`;
+    const defaultAvatarName = "Crypto Citizen";
+    const defaultAvatarBio = "Exploring the decentralized world.";
+
     return {
-      tradingProfile,
-      activityLevel,
+      tradingProfile: "General User",
+      activityLevel: activityLevel,
+      userCategory: "General Ethereum User",
       riskAssessment: {
         level: riskLevel,
         score: riskScore,
-        factors: riskFactors
+        factors: ["Generic risk factors apply."]
       },
-      bio: this.getDefaultBio({ activityLevel, tradingProfile }),
-      avatarName: "Crypto Explorer",
-      avatarBio: "Navigating the blockchain.",
-      suggestedTokens: ['ETH', 'LINK', 'UNI', 'ARB', 'MATIC'],
-      suggestedDapps: ['Uniswap', 'OpenSea', 'Lido', 'Aave']
+      bio: defaultBio,
+      avatarName: defaultAvatarName,
+      avatarBio: defaultAvatarBio,
+      suggestedTokens: ["ETH", "USDC", "DAI"],
+      suggestedDapps: ["Uniswap", "Aave", "OpenSea"],
+      actionableInsights: ["Always DYOR (Do Your Own Research) before investing.", "Keep your private keys secure."],
+      personaTags: ["Explorer", "Eth Holder", "Needs Review"]
     };
   }
 

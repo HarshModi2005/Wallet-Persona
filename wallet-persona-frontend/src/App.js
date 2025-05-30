@@ -7,12 +7,19 @@ import BasicWalletInfo from './components/BasicWalletInfo';
 import DetailedAnalysisSection from './components/DetailedAnalysisSection';
 import NftAnalysisSection from './components/NftAnalysisSection';
 import AssetDistributionChart from './components/AssetDistributionChart';
+import WalletJourneyTimeline from './components/WalletJourneyTimeline';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
-  faWallet, faArrowUp, faCalendar, faChartLine, faInfoCircle,
-  faExchangeAlt, faTags, faShieldAlt, faChartPie, faLightbulb,
-  faArrowCircleUp, faMobileAlt, faSearch, faSync, faSpinner,
-  faFileInvoiceDollar, faClock, faUsers, faNetworkWired, faHandHoldingUsd, faBalanceScale
+  faWallet,
+  faChartLine,
+  faInfoCircle,
+  faShieldAlt,
+  faChartPie,
+  faSearch,
+  faSync,
+  faSpinner,
+  faBalanceScale,
+  faRoute
 } from '@fortawesome/free-solid-svg-icons';
 
 function App() {
@@ -21,18 +28,86 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [showSearch, setShowSearch] = useState(true);
+  const [personaJourneyEvents, setPersonaJourneyEvents] = useState([]);
 
   // Refs for sections to observe
   const mainPersonaRef = useRef(null);
   const basicInfoRef = useRef(null);
   const nftAnalysisRef = useRef(null);
-  const analyticsDashboardRef = useRef(null); // For the new "Analytics Section"
-  // DetailedTransactionAnalysis is inside analyticsDashboardRef, so it might not need its own direct observer
-  // or it could if its content is also animated separately. For now, assume parent handles it.
-  // const detailedTxAnalysisRef = useRef(null); 
-  // const walletJourneyRef = useRef(null); // For future Wallet Journey section
+  const analyticsDashboardRef = useRef(null);
+  const detailedTxAnalysisRef = useRef(null);
+  const walletJourneyRef = useRef(null);
 
   const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
+
+  useEffect(() => {
+    if (personaJourneyEvents && personaJourneyEvents.length > 0) {
+      console.log("Persona Journey Progression Updated:", personaJourneyEvents);
+    }
+  }, [personaJourneyEvents]);
+
+  useEffect(() => {
+    if (walletData && walletData.persona) {
+      // Create a copy of persona for Chatling, modifying or removing large fields
+      const personaForChatling = { ...walletData.persona };
+      if (personaForChatling.avatarImageUrl && personaForChatling.avatarImageUrl.startsWith('data:image')) {
+        personaForChatling.avatarImageUrl = 'Image Generated'; // Replace base64 with a placeholder
+      }
+      // Potentially remove or shorten other large fields if they exist in personaForChatling
+      // delete personaForChatling.someOtherLargeField;
+
+      const persona_data = JSON.stringify(personaForChatling);
+      console.log("Attempting to send persona_data to Chatling (modified for size):", persona_data.substring(0, 500) + "...");
+
+      const sendToChatling = (attempt = 1) => {
+        if (window.Chatling && typeof window.Chatling.setVariables === 'function') {
+          window.Chatling.setVariables({
+            "persona_data": persona_data
+          }, function (success, errorMessage) {
+            if (success) {
+              console.log("Successfully sent persona_data to Chatling.");
+            } else {
+              console.error("Error sending persona_data to Chatling:", errorMessage);
+            }
+          });
+        } else {
+          console.warn(`Chatling SDK not ready, attempt ${attempt}. Retrying in 1 second...`);
+          if (attempt < 5) {
+            setTimeout(() => sendToChatling(attempt + 1), 1000);
+          } else {
+            console.error("Chatling SDK did not load after several attempts. Persona data not sent.");
+          }
+        }
+      };
+      sendToChatling();
+    }
+  }, [walletData]);
+
+  // Effect to control Chatling visibility based on search/persona view
+  useEffect(() => {
+    const controlChatlingVisibility = (attempt = 1) => {
+      if (window.Chatling && typeof window.Chatling.minimize === 'function' && typeof window.Chatling.open === 'function') {
+        if (showSearch) {
+          console.log("On search page, minimizing Chatling.");
+          window.Chatling.minimize();
+          // To truly hide, one might need to target the iframe/button if Chatling doesn't offer a hide() API.
+          // Example (fragile, use with caution if needed):
+          // const chatlingButton = document.getElementById('chatling-widget-button'); // Assuming an ID for the button
+          // if (chatlingButton) chatlingButton.style.display = 'none';
+        } else {
+          console.log("On persona page, ensuring Chatling is not explicitly hidden by our script (user can open).");
+          // If we used CSS to hide, we would remove the hiding class here.
+          // No explicit open() call to respect user's choice unless it was previously hidden by our script.
+        }
+      } else {
+        console.warn(`Chatling SDK not ready for visibility control, attempt ${attempt}. Retrying...`);
+        if (attempt < 5) {
+          setTimeout(() => controlChatlingVisibility(attempt + 1), 1000);
+        }
+      }
+    };
+    controlChatlingVisibility();
+  }, [showSearch]);
 
   useEffect(() => {
     const observerOptions = {
@@ -60,17 +135,17 @@ function App() {
       basicInfoRef.current,
       nftAnalysisRef.current,
       analyticsDashboardRef.current,
-      // detailedTxAnalysisRef.current,
-      // walletJourneyRef.current
+      detailedTxAnalysisRef.current,
+      walletJourneyRef.current
     ].filter(Boolean); // Filter out null refs if sections aren't rendered
 
     sections.forEach(section => {
-      observer.observe(section);
+      if (section) observer.observe(section);
     });
 
     return () => { // Cleanup observer on component unmount
       sections.forEach(section => {
-        observer.unobserve(section);
+        if (section) observer.unobserve(section);
       });
     };
   }, [walletData]); // Re-run when walletData changes, so new sections are observed
@@ -82,10 +157,11 @@ function App() {
     }
     setLoading(true);
     setError(null);
+    setPersonaJourneyEvents([]);
     try {
       const response = await axios.post(`${API_URL}/analyze-wallet`, { address });
       setWalletData(response.data);
-      setShowSearch(false); 
+      setShowSearch(false);
     } catch (err) {
       console.error("Error fetching wallet data:", err);
       setError(err.response?.data?.error || 'Failed to fetch wallet data. Please check the address or try again later.');
@@ -96,11 +172,13 @@ function App() {
   };
 
   const handleNewSearch = () => {
+    console.trace("handleNewSearch CALLED"); // Debugging trace
     setAddress('');
     setWalletData(null);
     setError(null);
     setLoading(false);
     setShowSearch(true);
+    setPersonaJourneyEvents([]);
   };
 
   useEffect(() => {
@@ -223,27 +301,13 @@ function App() {
                         </div>
                         <p><strong>Risk Factors:</strong></p>
                         <ul>
-                          {Array.isArray(walletData.persona?.riskFactorsDetails) && walletData.persona.riskFactorsDetails.length > 0 ?
-                            walletData.persona.riskFactorsDetails.map((factor, index) => (
-                              <li key={index}>{factor.description} ({factor.type})</li>
+                          {walletData.persona?.riskFactorsDetails?.finalFactors && walletData.persona.riskFactorsDetails.finalFactors.length > 0 ?
+                            walletData.persona.riskFactorsDetails.finalFactors.map((factor, index) => (
+                              <li key={index}>{factor}</li>
                             )) :
-                            (Array.isArray(walletData.persona?.riskFactors) && walletData.persona.riskFactors.length > 0 ?
-                              walletData.persona.riskFactors.map((factor, index) => (<li key={index}>{factor}</li>))
-                              : <li>No specific risk factors identified.</li>)
+                            (<li>No specific risk factors identified.</li>)
                           }
                         </ul>
-                      </div>
-                    </div>
-
-                    <div className="dashboard-card card">
-                      <div className="card-header">
-                        <h3><FontAwesomeIcon icon={faChartLine} className="me-2" />Activity Metrics</h3>
-                      </div>
-                      <div className="card-body">
-                        <p><strong>Monthly Activity:</strong></p>
-                        {walletData.details?.historicalActivity && walletData.details.historicalActivity.length > 0 ? (
-                          <p className="text-muted">Graph coming soon. Data available for {walletData.details.historicalActivity.length} months.</p>
-                        ) : <p>No historical activity data available.</p>}
                       </div>
                     </div>
 
@@ -256,31 +320,13 @@ function App() {
                         <p><strong>Unstoppable Domain:</strong> {walletData.details.profile.unstoppableDomain || 'N/A'}</p>
                         <p><strong>Total Transactions:</strong> {walletData.details.profile.totalTransactions}</p>
                         <p><strong>Active Since:</strong> {walletData.details.profile.firstTransactionDate ? new Date(walletData.details.profile.firstTransactionDate).toLocaleDateString() : 'N/A'}</p>
-                        <p><strong>Categories:</strong> {walletData.persona?.category || 'N/A'}</p>
+                        <p><strong>Categories:</strong> {walletData.persona?.userCategory || 'N/A'}</p>
                         <div><strong>Tags:</strong>
                           {Array.isArray(walletData.persona?.tags) && walletData.persona.tags.length > 0 ?
                             walletData.persona.tags.map((tag, index) => (
                               <span key={index} className={`badge bg-secondary me-1`}>{tag}</span>
                             )) : 'N/A'}
                         </div>
-
-                        <hr className="my-3" />
-                        <h5><FontAwesomeIcon icon={faBalanceScale} className="me-2" />Token Holdings (Ethereum Mainnet):</h5>
-                        {walletData.details?.tokens && walletData.details.tokens.length > 0 ? (
-                          <div className="token-holdings-list mt-2" style={{ maxHeight: '150px', overflowY: 'auto' }}>
-                            <ul className="list-group list-group-flush">
-                              {walletData.details.tokens.map(token => (
-                                <li key={token.contractAddress} className="list-group-item d-flex justify-content-between align-items-center" style={{ backgroundColor: 'transparent', borderColor: 'rgba(255,255,255,0.1)', padding: '0.5rem 0' }}>
-                                  <span>
-                                    <strong>{token.name || 'Unknown Token'} ({token.symbol || 'N/S'})</strong><br />
-                                    <small className="text-muted">Balance: {parseFloat(token.balance).toFixed(4)}</small>
-                                  </span>
-                                  <span className="badge bg-primary rounded-pill">${token.usdValue.toFixed(2)}</span>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        ) : <p className="text-muted">No ERC20 tokens found or reported.</p>}
                       </div>
                     </div>
                   </div>
@@ -299,10 +345,22 @@ function App() {
                 </div>
               </section>
 
-              <section id="detailed-transaction-analysis" className="full-page-section">
+              <section id="detailed-transaction-analysis" className="full-page-section" ref={detailedTxAnalysisRef}>
                 <div className="container-fluid">
                   <h2 className="text-center mb-4" style={{ color: 'var(--bs-light)' }}>Detailed Transaction Analysis</h2>
                   <DetailedAnalysisSection profile={walletData.details.profile} />
+                </div>
+              </section>
+
+              <section id="wallet-journey" className="mb-4 full-page-section" ref={walletJourneyRef}>
+                <div className="container-fluid">
+                  <h2 className="text-center mb-4" style={{ color: 'var(--bs-light)' }}>
+                    <FontAwesomeIcon icon={faRoute} className="me-2" />Wallet Journey
+                  </h2>
+                  <WalletJourneyTimeline
+                    walletAddress={walletData.address}
+                    onPersonaProgressUpdate={setPersonaJourneyEvents}
+                  />
                 </div>
               </section>
             </>

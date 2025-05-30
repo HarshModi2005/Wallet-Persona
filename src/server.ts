@@ -3,6 +3,7 @@ import cors from 'cors';
 import morgan from 'morgan';
 import { WalletService } from './services/WalletService';
 import { WalletPersonaService } from './services/WalletPersonaService';
+import { GeminiAIService } from './services/GeminiAIService';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -15,7 +16,8 @@ const apiKey = process.env.MORALIS_API_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXV
 const rpcUrl = process.env.RPC_URL || 'https://ethereum-rpc.publicnode.com';
 
 const walletService = new WalletService(apiKey, rpcUrl);
-const personaService = new WalletPersonaService(); // This will in turn init GeminiAIService, ImageGenerationService, ElevenLabsService once.
+// const geminiService = new GeminiAIService(process.env.GEMINI_API_KEY); // WalletPersonaService now creates its own
+const walletPersonaService = new WalletPersonaService(); // Constructor takes no arguments now
 
 // Detailed CORS configuration
 app.use(cors({
@@ -90,7 +92,7 @@ app.post('/api/analyze-wallet', async (req, res) => {
       // Generate persona with AI enhancement
       // Persona generation should ideally use the profile data as of the snapshot date too.
       // For now, WalletPersonaService is not aware of historicalSnapshotDate. This can be a future enhancement.
-      const persona = await personaService.generatePersona(details);
+      const persona = await walletPersonaService.generatePersona(details);
       
       // Combine and return the data
       res.json({
@@ -112,6 +114,47 @@ app.post('/api/analyze-wallet', async (req, res) => {
       error: 'Failed to analyze wallet',
       message: error instanceof Error ? error.message : 'Unknown error'
     });
+  }
+});
+
+app.get('/api/wallet-journey/:address', async (req, res) => {
+  const { address } = req.params;
+  const { chain, limit, cursor, fromDate, toDate, order, nftMetadata, includeInputData } = req.query;
+
+  if (!address) {
+    return res.status(400).json({ error: 'Wallet address is required' });
+  }
+
+  try {
+    console.log(`[Server] API /api/wallet-journey call for ${address} with query:`, req.query);
+    const journeyData = await walletService.getWalletJourney(
+      address,
+      chain as string | undefined,
+      limit ? parseInt(limit as string, 10) : undefined,
+      cursor as string | undefined,
+      fromDate as string | undefined,
+      toDate as string | undefined,
+      order as 'ASC' | 'DESC' | undefined,
+      nftMetadata === 'true' || nftMetadata === undefined, // default true
+      // includeInputData === 'true' || includeInputData === undefined // default true
+    );
+
+    // Log the journey data before sending, specifically checking timestamps
+    if (journeyData && journeyData.events && journeyData.events.length > 0) {
+      console.log(`[Server /api/wallet-journey] Data for ${address} before sending. Total events: ${journeyData.events.length}.`);
+      journeyData.events.slice(0, 3).forEach((event, index) => {
+        console.log(`[Server /api/wallet-journey] Event ${index} timestamp: "${event.timestamp}" (type: ${typeof event.timestamp})`);
+      });
+    } else if (journeyData) {
+      console.log(`[Server /api/wallet-journey] Data for ${address} before sending. No events or empty events array. Cursor: ${journeyData.nextCursor}`);
+    } else {
+      console.log(`[Server /api/wallet-journey] journeyData is null or undefined for ${address} before attempting to send.`);
+    }
+
+    res.json(journeyData);
+  } catch (error: any) {
+    console.error(`[Server] Error in /api/wallet-journey for ${address}:`, error);
+    res.status(500).json({ error: 'Failed to fetch wallet journey', details: error.message });
   }
 });
 

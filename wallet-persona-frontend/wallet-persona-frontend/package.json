@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "react-chrono": "^2.6.1",
+    "styled-components": "^5.3.11"
+  }
+}
