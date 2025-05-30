@@ -38,6 +38,40 @@ export interface Transaction {
   raw?: any;
 }
 
+// --- START OF NEW DeFi Summary Types ---
+export interface MoralisDeFiProjectedEarnings {
+  daily: number;
+  weekly: number;
+  monthly: number;
+  yearly: number;
+}
+
+export interface MoralisDeFiAccountData {
+  net_apy: number;
+  health_factor: number | null; // Can be a very large number or null
+}
+
+export interface MoralisDeFiProtocolInSummary {
+  protocol_name: string;
+  protocol_id: string;
+  protocol_url: string;
+  protocol_logo: string;
+  account_data: MoralisDeFiAccountData;
+  total_usd_value: number;
+  total_unclaimed_usd_value: number | null;
+  total_projected_earnings_usd: MoralisDeFiProjectedEarnings;
+  positions: number;
+}
+
+export interface MoralisDefiSummaryResponse {
+  active_protocols: number;
+  total_positions: number;
+  total_usd_value: number;
+  total_unclaimed_usd_value: number;
+  protocols: MoralisDeFiProtocolInSummary[];
+}
+// --- END OF NEW DeFi Summary Types ---
+
 export interface WalletProfile {
   address: string;
   ensName?: string;
@@ -61,7 +95,6 @@ export interface WalletProfile {
   mostExpensiveTxHash?: string;
   mostExpensiveTxFeeEth?: number;
   mostExpensiveTxFeeUsd?: number;
-  // Add more as we go
 
   // Phase 1.B: Temporal Analysis
   avgTxPerDay?: number;
@@ -74,7 +107,7 @@ export interface WalletProfile {
   uniqueInteractedAddressesCount?: number;
   topInteractedAddresses?: { address: string; count: number }[];
 
-  // NFT Analysis Fields - ADDED HERE
+  // NFT Analysis Fields
   totalNftsHeld?: number;
   uniqueNftCollectionsCount?: number;
   topNftCollections?: Array<{
@@ -83,15 +116,34 @@ export interface WalletProfile {
     symbol?: string;
     count: number;
     collectionLogo?: string;
-    nfts: NFT[]; // Sample NFTs from this collection
+    nfts: NFT[];
   }>;
-}
+  
+  // Fields from CoreTransactionAnalysis (already added by previous step, ensure they are here)
+  transactionCountInDateRange?: number;
+  // totalFeesPaidEth?: number; // This is totalGasFeesPaidEth above
+  // totalFeesPaidUsd?: number; // This is totalGasFeesPaidUsd above
+  gasUsed?: number;
+  uniqueContractInteractions?: number;
+  contractInteractionFrequency?: { [address: string]: number };
+  mostFrequentContract?: string;
+  activeDays?: number;
+  transactionFrequencyPerDay?: number;
+  walletAgeInDays?: number;
+  isLikelyBot?: boolean;
+  suspiciousActivityScore?: number;
+  riskFactors?: string[];
 
-export interface DeFiPosition {
-  protocol: string;
-  positionType: string;
-  value: number;
-  tokens: TokenBalance[];
+  // New DeFi field
+  defiSummary?: MoralisDefiSummaryResponse;
+
+  // DAO related (placeholders for now)
+  daoGovernanceTokensHeld?: TokenBalance[];
+  daoVotingActivity?: {
+    snapshotVotes?: number;
+    onChainVotes?: number;
+    lastVoteDate?: Date;
+  };
 }
 
 export interface WalletDetails {
@@ -101,7 +153,7 @@ export interface WalletDetails {
   nfts: NFT[];
   transactions: Transaction[];
   profile: WalletProfile;
-  defiPositions: DeFiPosition[];
+  defiSummary?: MoralisDefiSummaryResponse;
   historicalActivity?: HistoricalActivityMetric[];
   keyEvents?: KeyEvent[];
 }
@@ -177,9 +229,8 @@ export interface ApprovalDetail {
 
 export interface ContractInteractionDetail {
   approvals?: ApprovalDetail[];
-  inputData?: string;      // Added to store raw input data
-  methodSignature?: string; // Added for the 4-byte signature
-  // Define further for set_approvals_all, revokes, set_revokes_all if needed based on Moralis structure
+  inputData?: string;
+  methodSignature?: string;
 }
 
 export interface TimelineEvent {
@@ -187,28 +238,28 @@ export interface TimelineEvent {
   timestamp: string;
   blockNumber: string;
   category: string;
-  summary?: string; // Moralis provides this, can be very useful
+  summary?: string;
   details: {
-    fromAddress: string; // Transaction sender
+    fromAddress: string;
     fromAddressLabel?: string | null;
-    fromAddressEntity?: string | null; // e.g. "OpenSea"
+    fromAddressEntity?: string | null;
     fromAddressEntityLogo?: string | null;
-    toAddress: string; // Transaction recipient (often a contract)
+    toAddress: string;
     toAddressLabel?: string | null;
-    toAddressEntity?: string | null; // e.g. "OpenSea: Seaport"
+    toAddressEntity?: string | null;
     toAddressEntityLogo?: string | null;
-    value: string; // Native value of the transaction (e.g., ETH sent)
+    value: string;
     transactionFee: string;
     gasPrice?: string;
-    methodLabel?: string; // Decoded method call, if available
+    methodLabel?: string;
     nftTransfers?: NftTransferDetail[];
     erc20Transfers?: Erc20TransferDetail[];
-    nativeTransfers?: NativeTransferDetail[]; // For internal native transfers
-    contractInteraction?: ContractInteractionDetail; // Corrected typo, singular. And for specific contract call data.
+    nativeTransfers?: NativeTransferDetail[];
+    contractInteraction?: ContractInteractionDetail;
     possibleSpam: boolean;
-    receiptStatus: '1' | '0'; // 1 for success, 0 for failure
-    displayValue?: string; // Added for user-friendly value display
-    displayValueToken?: string; // Added to specify the token for displayValue (e.g., "ETH", "USDC")
+    receiptStatus: '1' | '0';
+    displayValue?: string;
+    displayValueToken?: string;
   };
 }
 

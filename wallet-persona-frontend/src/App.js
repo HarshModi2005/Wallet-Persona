@@ -8,6 +8,7 @@ import DetailedAnalysisSection from './components/DetailedAnalysisSection';
 import NftAnalysisSection from './components/NftAnalysisSection';
 import AssetDistributionChart from './components/AssetDistributionChart';
 import WalletJourneyTimeline from './components/WalletJourneyTimeline';
+import DeFiSummarySection from './components/DeFiSummarySection';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faWallet,
@@ -19,7 +20,8 @@ import {
   faSync,
   faSpinner,
   faBalanceScale,
-  faRoute
+  faRoute,
+  faPiggyBank
 } from '@fortawesome/free-solid-svg-icons';
 
 function App() {
@@ -33,10 +35,12 @@ function App() {
   // Refs for sections to observe
   const mainPersonaRef = useRef(null);
   const basicInfoRef = useRef(null);
-  const nftAnalysisRef = useRef(null);
+  const defiSummaryRef = useRef(null);
   const analyticsDashboardRef = useRef(null);
+  const nftAnalysisRef = useRef(null);
   const detailedTxAnalysisRef = useRef(null);
   const walletJourneyRef = useRef(null);
+
 
   const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
 
@@ -133,10 +137,11 @@ function App() {
     const sections = [
       mainPersonaRef.current,
       basicInfoRef.current,
-      nftAnalysisRef.current,
+      defiSummaryRef.current,
       analyticsDashboardRef.current,
+      nftAnalysisRef.current,
       detailedTxAnalysisRef.current,
-      walletJourneyRef.current
+      walletJourneyRef.current,
     ].filter(Boolean); // Filter out null refs if sections aren't rendered
 
     sections.forEach(section => {
@@ -165,7 +170,7 @@ function App() {
     } catch (err) {
       console.error("Error fetching wallet data:", err);
       setError(err.response?.data?.error || 'Failed to fetch wallet data. Please check the address or try again later.');
-      setShowSearch(true); 
+      setShowSearch(true);
       setWalletData(null);
     }
     setLoading(false);
@@ -259,112 +264,123 @@ function App() {
             </button>
           </div>
 
+          {/* Landing Section */}
           <section id="main-persona" className="mb-4 full-page-section" ref={mainPersonaRef}>
             <MainPersonaSection persona={walletData.persona} />
           </section>
 
-          {walletData.details && walletData.details.profile && (
-            <>
-              <section id="basic-info" className="mb-4 full-page-section" ref={basicInfoRef}>
-                <BasicWalletInfo details={{ ...walletData.details, nfts: walletData.details.nfts }} />
-              </section>
+          {/* Basic Info Section */}
+          <section id="basic-info" className="mb-4 full-page-section" ref={basicInfoRef}>
+            <BasicWalletInfo details={{ ...walletData.details, nfts: walletData.details.nfts }} />
+          </section>
 
-              <section id="analytics-dashboard" className="mb-4 full-page-section" ref={analyticsDashboardRef}>
-                <div className="container-fluid">
-                  <h2 className="text-center mb-4" style={{ color: 'var(--bs-light)' }}>Analytics Dashboard</h2>
-                  <div className="dashboard-grid">
+          {/* DeFi Section */}
+          {walletData.details && walletData.details.profile && walletData.details.profile.defiSummary && (
+            <section id="defi-summary" className="mb-4 full-page-section" ref={defiSummaryRef}>
+              <div className="container-fluid">
+                <DeFiSummarySection defiSummary={walletData.details.profile.defiSummary} />
+              </div>
+            </section>
+          )}
 
-                    <div className="dashboard-card card">
-                      <div className="card-header">
-                        <h3><FontAwesomeIcon icon={faChartPie} className="me-2" />Asset Distribution</h3>
-                      </div>
-                      <div className="card-body">
-                        {walletData.details && (walletData.details.tokens || walletData.details.balance) ? (
-                          <AssetDistributionChart
-                            tokens={walletData.details.tokens}
-                            nativeBalance={walletData.details.balance}
-                          />
-                        ) : (
-                          <p className="text-muted mt-2">Asset data not available.</p>
-                        )}
-                      </div>
+          {/* Analytics Dashboard Section */}
+          <section id="analytics-dashboard" className="mb-4 full-page-section" ref={analyticsDashboardRef}>
+            <div className="container-fluid">
+              <h2 className="text-center mb-4" style={{ color: 'var(--bs-light)' }}>Analytics Dashboard</h2>
+              <div className="dashboard-grid">
+
+                <div className="dashboard-card card">
+                  <div className="card-header">
+                    <h3><FontAwesomeIcon icon={faChartPie} className="me-2" />Asset Distribution</h3>
+                  </div>
+                  <div className="card-body">
+                    {walletData.details && (walletData.details.tokens || walletData.details.balance) ? (
+                      <AssetDistributionChart
+                        tokens={walletData.details.tokens}
+                        nativeBalance={walletData.details.balance}
+                      />
+                    ) : (
+                      <p className="text-muted mt-2">Asset data not available.</p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="dashboard-card card">
+                  <div className="card-header">
+                    <h3><FontAwesomeIcon icon={faShieldAlt} className="me-2" />Risk Assessment</h3>
+                  </div>
+                  <div className="card-body">
+                    <p><strong>Score:</strong> {walletData.persona?.riskScore || 0}/100</p>
+                    <div className="progress mt-1 mb-2" style={{ height: '10px' }}>
+                      <div className={`progress-bar ${getRiskColor(walletData.persona?.riskScore)}`} role="progressbar" style={{ width: `${walletData.persona?.riskScore || 0}%` }} aria-valuenow={walletData.persona?.riskScore || 0} aria-valuemin="0" aria-valuemax="100"></div>
                     </div>
+                    <p><strong>Risk Factors:</strong></p>
+                    <ul>
+                      {walletData.persona?.riskFactorsDetails?.finalFactors && walletData.persona.riskFactorsDetails.finalFactors.length > 0 ?
+                        walletData.persona.riskFactorsDetails.finalFactors.map((factor, index) => (
+                          <li key={index}>{factor}</li>
+                        )) :
+                        (<li>No specific risk factors identified.</li>)
+                      }
+                    </ul>
+                  </div>
+                </div>
 
-                    <div className="dashboard-card card">
-                      <div className="card-header">
-                        <h3><FontAwesomeIcon icon={faShieldAlt} className="me-2" />Risk Assessment</h3>
-                      </div>
-                      <div className="card-body">
-                        <p><strong>Score:</strong> {walletData.persona?.riskScore || 0}/100</p>
-                        <div className="progress mt-1 mb-2" style={{ height: '10px' }}>
-                          <div className={`progress-bar ${getRiskColor(walletData.persona?.riskScore)}`} role="progressbar" style={{ width: `${walletData.persona?.riskScore || 0}%` }} aria-valuenow={walletData.persona?.riskScore || 0} aria-valuemin="0" aria-valuemax="100"></div>
-                        </div>
-                        <p><strong>Risk Factors:</strong></p>
-                        <ul>
-                          {walletData.persona?.riskFactorsDetails?.finalFactors && walletData.persona.riskFactorsDetails.finalFactors.length > 0 ?
-                            walletData.persona.riskFactorsDetails.finalFactors.map((factor, index) => (
-                              <li key={index}>{factor}</li>
-                            )) :
-                            (<li>No specific risk factors identified.</li>)
-                          }
-                        </ul>
-                      </div>
-                    </div>
-
-                    <div className="dashboard-card card">
-                      <div className="card-header">
-                        <h3><FontAwesomeIcon icon={faInfoCircle} className="me-2" />Wallet Profile Highlights</h3>
-                      </div>
-                      <div className="card-body">
-                        <p><strong>ENS:</strong> {walletData.details.profile.ensName || 'N/A'}</p>
-                        <p><strong>Unstoppable Domain:</strong> {walletData.details.profile.unstoppableDomain || 'N/A'}</p>
-                        <p><strong>Total Transactions:</strong> {walletData.details.profile.totalTransactions}</p>
-                        <p><strong>Active Since:</strong> {walletData.details.profile.firstTransactionDate ? new Date(walletData.details.profile.firstTransactionDate).toLocaleDateString() : 'N/A'}</p>
-                        <p><strong>Categories:</strong> {walletData.persona?.userCategory || 'N/A'}</p>
-                        <div><strong>Tags:</strong>
-                          {Array.isArray(walletData.persona?.tags) && walletData.persona.tags.length > 0 ?
-                            walletData.persona.tags.map((tag, index) => (
-                              <span key={index} className={`badge bg-secondary me-1`}>{tag}</span>
-                            )) : 'N/A'}
-                        </div>
-                      </div>
+                <div className="dashboard-card card">
+                  <div className="card-header">
+                    <h3><FontAwesomeIcon icon={faInfoCircle} className="me-2" />Wallet Profile Highlights</h3>
+                  </div>
+                  <div className="card-body">
+                    <p><strong>ENS:</strong> {walletData.details.profile.ensName || 'N/A'}</p>
+                    <p><strong>Unstoppable Domain:</strong> {walletData.details.profile.unstoppableDomain || 'N/A'}</p>
+                    <p><strong>Total Transactions:</strong> {walletData.details.profile.totalTransactions}</p>
+                    <p><strong>Active Since:</strong> {walletData.details.profile.firstTransactionDate ? new Date(walletData.details.profile.firstTransactionDate).toLocaleDateString() : 'N/A'}</p>
+                    <p><strong>Categories:</strong> {walletData.persona?.userCategory || 'N/A'}</p>
+                    <div><strong>Tags:</strong>
+                      {Array.isArray(walletData.persona?.tags) && walletData.persona.tags.length > 0 ?
+                        walletData.persona.tags.map((tag, index) => (
+                          <span key={index} className={`badge bg-secondary me-1`}>{tag}</span>
+                        )) : 'N/A'}
                     </div>
                   </div>
                 </div>
-              </section>
+              </div>
+            </div>
+          </section>
 
-              <section id="nft-analysis" className="mb-4 full-page-section" ref={nftAnalysisRef}>
-                <div className="container-fluid nft-section-container">
-                  {walletData.details.profile.totalNftsHeld !== undefined ? (
-                    <NftAnalysisSection profile={walletData.details.profile} nfts={walletData.details.nfts} />
-                  ) : (
-                    <div className="text-center">
-                      <FontAwesomeIcon icon={faSpinner} spin /> Loading NFT Data...
-                    </div>
-                  )}
+          {/* NFT Portfolio Analysis Section */}
+          <section id="nft-analysis" className="mb-4 full-page-section" ref={nftAnalysisRef}>
+            <div className="container-fluid nft-section-container">
+              {walletData.details.profile.totalNftsHeld !== undefined ? (
+                <NftAnalysisSection profile={walletData.details.profile} nfts={walletData.details.nfts} />
+              ) : (
+                <div className="text-center">
+                  <FontAwesomeIcon icon={faSpinner} spin /> Loading NFT Data...
                 </div>
-              </section>
+              )}
+            </div>
+          </section>
 
-              <section id="detailed-transaction-analysis" className="full-page-section" ref={detailedTxAnalysisRef}>
-                <div className="container-fluid">
-                  <h2 className="text-center mb-4" style={{ color: 'var(--bs-light)' }}>Detailed Transaction Analysis</h2>
-                  <DetailedAnalysisSection profile={walletData.details.profile} />
-                </div>
-              </section>
+          {/* Detailed Transaction Analysis Section */}
+          <section id="detailed-transaction-analysis" className="mb-4 full-page-section" ref={detailedTxAnalysisRef}>
+            <div className="container-fluid">
+              <h2 className="text-center mb-4" style={{ color: 'var(--bs-light)' }}>Detailed Transaction Analysis</h2>
+              <DetailedAnalysisSection profile={walletData.details.profile} />
+            </div>
+          </section>
 
-              <section id="wallet-journey" className="mb-4 full-page-section" ref={walletJourneyRef}>
-                <div className="container-fluid">
-                  <h2 className="text-center mb-4" style={{ color: 'var(--bs-light)' }}>
-                    <FontAwesomeIcon icon={faRoute} className="me-2" />Wallet Journey
-                  </h2>
-                  <WalletJourneyTimeline
-                    walletAddress={walletData.address}
-                    onPersonaProgressUpdate={setPersonaJourneyEvents}
-                  />
-                </div>
-              </section>
-            </>
-          )}
+          {/* Wallet Journey Section */}
+          <section id="wallet-journey" className="mb-4 full-page-section" ref={walletJourneyRef}>
+            <div className="container-fluid">
+              <h2 className="text-center mb-4" style={{ color: 'var(--bs-light)' }}>
+                <FontAwesomeIcon icon={faRoute} className="me-2" />Wallet Journey
+              </h2>
+              <WalletJourneyTimeline
+                walletAddress={walletData.address}
+                onPersonaProgressUpdate={setPersonaJourneyEvents}
+              />
+            </div>
+          </section>
         </>
       )}
 
@@ -384,4 +400,4 @@ const getRiskColor = (score) => {
   return 'bg-danger';
 };
 
-export default App; 
+export default App;

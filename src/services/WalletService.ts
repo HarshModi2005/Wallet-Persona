@@ -9,7 +9,6 @@ import {
   NFT, 
   Transaction,
   WalletProfile,
-  DeFiPosition,
   HistoricalActivityMetric,
   KeyEvent,
   TimelineEvent,
@@ -17,7 +16,8 @@ import {
   NftTransferDetail,
   Erc20TransferDetail,
   NativeTransferDetail,
-  ContractInteractionDetail
+  ContractInteractionDetail,
+  MoralisDefiSummaryResponse
 } from '../types/wallet.types';
 import { TransactionAnalyzerService, CoreTransactionAnalysis } from './TransactionAnalyzerService';
 
@@ -29,13 +29,35 @@ export class WalletService {
   private analyzerService: TransactionAnalyzerService;
 
   constructor(apiKey: string, rpcUrl: string) {
-    // Initialize Moralis
+    if (!Moralis.Core.isStarted) {
     Moralis.start({
       apiKey
     });
-    
+    } else {
+        // Optionally, update API key if it can change, or just ensure it's set
+        // Moralis.Core.config.apiKey = apiKey;
+    }
     this.provider = new ethers.JsonRpcProvider(rpcUrl);
     this.analyzerService = new TransactionAnalyzerService();
+  }
+
+  private async _getWalletDeFiSummary(address: string, chain: string = '0x1'): Promise<MoralisDefiSummaryResponse | null> {
+    try {
+      console.log(`[WalletService] _getWalletDeFiSummary started for address: ${address} on chain: ${chain}`);
+      const response = await Moralis.EvmApi.wallets.getDefiSummary({
+        address,
+        chain,
+      });
+      console.log(`[WalletService] _getWalletDeFiSummary Moralis response for ${address}:`, JSON.stringify(response.raw, null, 2));
+      return response.raw as MoralisDefiSummaryResponse; // Assuming response.raw is the correct structure
+    } catch (error: any) {
+      console.error(`[WalletService] Error fetching DeFi summary for ${address} on chain ${chain}:`, error.message);
+      if (error.details) {
+        console.error(`[WalletService] Moralis Error Details:`, error.details);
+      }
+      // Do not throw, just return null so the rest of the wallet analysis can proceed
+      return null; 
+    }
   }
 
   async getWalletDetails(address: string, historicalSnapshotDate?: string): Promise<WalletDetails> {
@@ -43,7 +65,6 @@ export class WalletService {
       console.log(`[WalletService] getWalletDetails started for address: ${address}, historicalSnapshotDate: ${historicalSnapshotDate}`);
       const currentEthPrice = await this.getEthPrice(); // Get ETH price early
 
-      // Fetch all transactions once, as they are needed for both profile and historical activity
       const allTransactions = await this.getAllTransactions(address, '0x1');
 
       let snapshotEndDate: Date | undefined = undefined;
@@ -63,7 +84,7 @@ export class WalletService {
         unstoppableDomain,
         walletStats,
         activeChainData,
-        defiPositions,
+        defiSummaryData,
         historicalActivity
       ] = await Promise.all([
         this.getNativeBalance(address),
@@ -73,25 +94,22 @@ export class WalletService {
         this.getUnstoppableDomain(address),
         this.getWalletStats(address),
         this.getActiveChains(address),
-        this.getDeFiPositions(address),
+        this._getWalletDeFiSummary(address),
         this.getHistoricalActivityMetrics(address, allTransactions, currentEthPrice, 12, snapshotEndDate)
       ]);
 
-      // Calculate total token USD value
       const totalTokenValue = tokens.reduce((sum, token) => sum + (token.usdValue || 0), 0);
       nativeBalanceDetails.totalTokenUsdValue = totalTokenValue;
       nativeBalanceDetails.grandTotalUsdValue = nativeBalanceDetails.usdValue + totalTokenValue;
       
-      // Use the member analyzerService, pass snapshotEndDate for coreAnalysis
       const coreAnalysis = this.analyzerService.analyzeTransactions(
         allTransactions, 
         address, 
         currentEthPrice, 
-        undefined, // No explicit startDate for the main profile, let analyzer handle full range up to snapshotEndDate
-        snapshotEndDate // Pass snapshotEndDate here
+        undefined, 
+        snapshotEndDate 
       );
 
-      // Calculate profile data using fetched details and coreAnalysis
       const profile = this.buildWalletProfile(
         address, 
         allTransactions,
@@ -101,10 +119,10 @@ export class WalletService {
         walletStats, 
         activeChainData, 
         tokens,
-        coreAnalysis
+        coreAnalysis,
+        defiSummaryData
       );
 
-      // Identify key events for the wallet journey
       const keyEvents = this._identifyKeyEvents(allTransactions, rawNfts, profile, address);
 
       console.log(`[WalletService] getWalletDetails successful for address: ${address}`);
@@ -115,7 +133,7 @@ export class WalletService {
         nfts: rawNfts,
         transactions: allTransactions,
         profile,
-        defiPositions,
+        defiSummary: defiSummaryData === null ? undefined : defiSummaryData,
         historicalActivity,
         keyEvents
       };
@@ -593,13 +611,14 @@ export class WalletService {
   private buildWalletProfile(
     address: string,
     transactions: Transaction[],
-    rawNfts: NFT[], // Added rawNfts parameter
+    rawNfts: NFT[],
     ensName: string | undefined,
     unstoppableDomain: string | undefined,
     walletStats: any, 
     activeChainData: any, 
     tokens: TokenBalance[],
-    coreAnalysis: CoreTransactionAnalysis
+    coreAnalysis: CoreTransactionAnalysis,
+    defiSummary: MoralisDefiSummaryResponse | null
   ): WalletProfile {
     console.log(`[WalletService] buildWalletProfile called for address: ${address}`);
     console.log(`[WalletService] buildWalletProfile - TOTAL transactions from getAllTransactions: ${transactions.length}`);
@@ -708,10 +727,13 @@ export class WalletService {
       mostExpensiveTxFeeEth: analysis.mostExpensiveTxFeeEth,
       mostExpensiveTxFeeUsd: analysis.mostExpensiveTxFeeUsd,
       ...nftAnalysisResults, // Spread NFT analysis results here
-      ...analysis 
+      ...analysis, 
+      defiSummary: defiSummary === null ? undefined : defiSummary,
+      daoGovernanceTokensHeld: [], // Placeholder, to be implemented
+      daoVotingActivity: undefined // Placeholder, to be implemented
     };
 
-    console.log(`[WalletService] buildWalletProfile - returning profile:`, JSON.stringify(profile, null, 2));
+    console.log(`[WalletService] buildWalletProfile - returning profile (with DeFi summary):`, JSON.stringify(profile, null, 2));
     return profile;
   }
 
@@ -766,12 +788,6 @@ export class WalletService {
       console.warn(`[WalletService] Failed to get active chains for ${address}:`, error);
       return { active_chains: [] }; // Ensure fallback provides an object with an active_chains property
     }
-  }
-
-  private async getDeFiPositions(address: string): Promise<DeFiPosition[]> {
-    // This is a placeholder - actual implementation would require
-    // integration with specific DeFi protocols or aggregators
-    return [];
   }
 
   private async getEthPrice(): Promise<number> {
@@ -1204,19 +1220,39 @@ export class WalletService {
 
           // Populate NFT Transfers
           if (tx.nftTransfers && Array.isArray(tx.nftTransfers)) {
-            details.nftTransfers = tx.nftTransfers.map((n: any) => ({
-              tokenAddress: n.tokenAddress?.lowercase || n.tokenAddress,
-              tokenId: n.tokenId,
-              value: n.value,
-              amount: n.amount,
-              contractType: n.contractType,
-              direction: n.direction,
-              name: n.normalizedMetadata?.name,
-              image: n.normalizedMetadata?.image,
-              collectionLogo: n.collectionLogo, // This might be directly on 'n' from Moralis History
-              fromAddress: n.fromAddress?.lowercase || n.fromAddress,
-              toAddress: n.toAddress?.lowercase || n.toAddress,
-            }));
+            details.nftTransfers = tx.nftTransfers.map((n: any) => {
+              let imageUrl = n.normalizedMetadata?.image;
+              if (imageUrl && typeof imageUrl === 'string' && imageUrl.startsWith('ipfs://')) {
+                imageUrl = imageUrl.replace('ipfs://', 'https://ipfs.io/ipfs/');
+              }
+
+              let collectionLogoUrl = n.collectionLogo; // This comes directly from Moralis history API for the transfer event
+              if (collectionLogoUrl && typeof collectionLogoUrl === 'string' && collectionLogoUrl.startsWith('ipfs://')) {
+                collectionLogoUrl = collectionLogoUrl.replace('ipfs://', 'https://ipfs.io/ipfs/');
+              }
+              
+              // Also attempt to get image from normalizedMetadata.image_url if .image is not present
+              if (!imageUrl && n.normalizedMetadata?.image_url && typeof n.normalizedMetadata.image_url === 'string') {
+                imageUrl = n.normalizedMetadata.image_url;
+                if (imageUrl.startsWith('ipfs://')) {
+                    imageUrl = imageUrl.replace('ipfs://', 'https://ipfs.io/ipfs/');
+                }
+              }
+
+              return {
+                tokenAddress: n.tokenAddress?.lowercase || n.tokenAddress,
+                tokenId: n.tokenId,
+                value: n.value,
+                amount: n.amount,
+                contractType: n.contractType,
+                direction: n.direction,
+                name: n.normalizedMetadata?.name,
+                image: imageUrl, 
+                collectionLogo: collectionLogoUrl,
+                fromAddress: n.fromAddress?.lowercase || n.fromAddress,
+                toAddress: n.toAddress?.lowercase || n.toAddress,
+              };
+            });
           }
 
           let summary = tx.summary || ''; // Use Moralis summary if available

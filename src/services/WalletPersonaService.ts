@@ -407,7 +407,7 @@ export class WalletPersonaService {
     const calculatedWalletAge = this._calculateWalletAge(walletDetails.profile?.firstTransactionDate);
     const calculatedActivitySummary = this._calculateActivitySummary(walletDetails.transactions || []);
     const deterministicRisk = this._calculateDeterministicRiskScore(walletDetails);
-
+    
     return {
       category: ["General User"],
       userCategory: "General User",
@@ -578,7 +578,7 @@ export class WalletPersonaService {
     
     return [...new Set(tags)].slice(0, 5); // Ensure unique and limit count
   }
-
+  
   /**
    * Determine wallet categories based on activity patterns
    */
@@ -595,7 +595,7 @@ export class WalletPersonaService {
     const hasDefiTokens = walletDetails.tokens.some(token => 
       defiTokens.includes(token.symbol.toUpperCase())
     );
-    if (hasDefiTokens || walletDetails.defiPositions.length > 0) {
+    if (hasDefiTokens || (walletDetails.defiSummary && walletDetails.defiSummary.total_positions > 0)) {
       categories.push('DeFi Investor');
     }
     
@@ -1058,7 +1058,7 @@ export class WalletPersonaService {
     }
     
     // DeFi tags
-    if (walletDetails.defiPositions.length > 0) {
+    if (walletDetails.defiSummary && walletDetails.defiSummary.total_positions > 0) {
       tags.push('DeFi User');
     }
     
