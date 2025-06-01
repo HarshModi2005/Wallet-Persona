@@ -69,6 +69,11 @@ Wallet Persona Analyzer is a sophisticated blockchain analytics platform that tr
   <p><em>AI-powered NFT recommendations with detailed market analysis and personalized insights based on wallet behavior</em></p>
 </div>
 
+<div align="center">
+  <img src="./images/NFTSuggestions.png" alt="Personalized NFT Suggestions Showcase" width="700"/>
+  <p><em>Showcase of personalized NFT suggestions, highlighting diverse collections and justifications.</em></p>
+</div>
+
 **NFT Portfolio Analysis**
 - Comprehensive collection evaluation including rarity metrics and floor price analysis
 - Trading pattern recognition (flipping vs. holding strategies)
@@ -98,6 +103,11 @@ The system employs a sophisticated categorization algorithm that analyzes transa
 - Analyzes lending/borrowing behavior across multiple platforms
 - Tracks governance token holdings and voting participation
 - Calculates DeFi risk exposure and protocol diversification
+
+<div align="center">
+  <img src="./images/DeFiPortfolio.png" alt="DeFi Portfolio Overview" width="700"/>
+  <p><em>Overview of a user's DeFi portfolio, showing active protocols and positions.</em></p>
+</div>
 
 **NFT Collector Profiling**
 - Comprehensive collection analysis including rarity metrics

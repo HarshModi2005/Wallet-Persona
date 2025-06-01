@@ -297,11 +297,17 @@ export class WalletService {
 
 
       return result.map((nftFromApi: any): NFT => {
+        const nftIdentifier = `${nftFromApi?.tokenAddress?.toString()}/${nftFromApi?.tokenId?.toString()}`;
+        console.log(`[WalletService getNFTs] Processing NFT: ${nftIdentifier}`);
+        console.log(`[WalletService getNFTs DEBUG ${nftIdentifier}] Raw Moralis NFT object:`, JSON.stringify(nftFromApi, null, 2).substring(0, 500) + "...");
+
+
         // console.log(`[WalletService] Processing NFT: ${nftFromApi?.tokenAddress?.toString()}/${nftFromApi?.tokenId?.toString()}`);
         let imageUrl: string | undefined = undefined;
         let metadataToParse: any = null;
         let collectionName: string | undefined = nftFromApi.name; // Initial attempt from Moralis's top-level name for the NFT
         let collectionLogo: string | undefined = nftFromApi.collectionLogo || nftFromApi.collection_logo;
+        console.log(`[WalletService getNFTs DEBUG ${nftIdentifier}] Initial collectionLogo from nftFromApi.collectionLogo or .collection_logo: ${collectionLogo}`);
 
 
         // 1. Prioritize normalizedMetadata (camelCase)
@@ -328,6 +334,7 @@ export class WalletService {
         if (metadataToParse) {
           if (metadataToParse.image) imageUrl = metadataToParse.image;
           else if (metadataToParse.image_url) imageUrl = metadataToParse.image_url;
+          console.log(`[WalletService getNFTs DEBUG ${nftIdentifier}] Image URL from metadataToParse (.image or .image_url): ${imageUrl}`);
 
           if (!collectionName && (metadataToParse.collection?.name || metadataToParse.collection_name)) {
             collectionName = metadataToParse.collection.name || metadataToParse.collection_name;
@@ -342,6 +349,7 @@ export class WalletService {
 
           if (!collectionLogo && (metadataToParse.collection?.image_url || metadataToParse.collection?.image || metadataToParse.collection_logo)) {
             collectionLogo = metadataToParse.collection.image_url || metadataToParse.collection.image || metadataToParse.collection_logo;
+            console.log(`[WalletService getNFTs DEBUG ${nftIdentifier}] Collection logo from metadataToParse.collection: ${collectionLogo}`);
           }
         }
         
@@ -353,6 +361,7 @@ export class WalletService {
             const jsonData = JSON.parse(decodedJson);
             if (jsonData.image) imageUrl = jsonData.image;
             else if (jsonData.image_url) imageUrl = jsonData.image_url;
+            console.log(`[WalletService getNFTs DEBUG ${nftIdentifier}] Image URL from base64 tokenUri: ${imageUrl}`);
           } catch (e) {
             // console.warn(`[WalletService] Failed to parse base64 token URI for ${nftFromApi?.tokenAddress?.toString()}/${nftFromApi?.tokenId?.toString()}`);
           }
@@ -362,17 +371,23 @@ export class WalletService {
         if (!imageUrl && nftFromApi.media?.items && Array.isArray(nftFromApi.media.items) && nftFromApi.media.items.length > 0) {
             const imageMediaItem = nftFromApi.media.items.find((item: any) => item.url && (item.mimetype?.startsWith('image') || item.url.match(/\.(jpeg|jpg|gif|png|webp|svg)$/i)));
             if (imageMediaItem) imageUrl = imageMediaItem.url;
+            console.log(`[WalletService getNFTs DEBUG ${nftIdentifier}] Image URL from media.items: ${imageUrl}`);
         } else if (!imageUrl && nftFromApi.mediaItems && Array.isArray(nftFromApi.mediaItems) && nftFromApi.mediaItems.length > 0) { // Alternative structure name
             const imageMediaItem = nftFromApi.mediaItems.find((item: any) => item.url && (item.type === 'image' || item.url.match(/\.(jpeg|jpg|gif|png|webp|svg)$/i)));
             if (imageMediaItem) imageUrl = imageMediaItem.url;
+            console.log(`[WalletService getNFTs DEBUG ${nftIdentifier}] Image URL from mediaItems: ${imageUrl}`);
         }
 
         // 6. IPFS URL conversion for image and logo
         if (imageUrl && imageUrl.startsWith('ipfs://')) {
+          const originalIpfsImageUrl = imageUrl;
           imageUrl = imageUrl.replace('ipfs://', 'https://ipfs.io/ipfs/');
+          console.log(`[WalletService getNFTs DEBUG ${nftIdentifier}] Converted IPFS image URL: ${originalIpfsImageUrl} -> ${imageUrl}`);
         }
         if (collectionLogo && collectionLogo.startsWith('ipfs://')) {
+          const originalIpfsLogoUrl = collectionLogo;
           collectionLogo = collectionLogo.replace('ipfs://', 'https://ipfs.io/ipfs/');
+          console.log(`[WalletService getNFTs DEBUG ${nftIdentifier}] Converted IPFS collection logo URL: ${originalIpfsLogoUrl} -> ${collectionLogo}`);
         }
 
         let finalContractAddress = '';
@@ -390,6 +405,7 @@ export class WalletService {
             collectionName = nftFromApi.name || nftFromApi.symbol || 'Unknown Collection';
         }
 
+        console.log(`[WalletService getNFTs DEBUG ${nftIdentifier}] Final Image URL: ${imageUrl}, Final Collection Logo: ${collectionLogo}, Collection Name: ${collectionName}`);
 
         return {
           tokenId: nftFromApi.tokenId?.toString() || nftFromApi.token_id?.toString() || '',

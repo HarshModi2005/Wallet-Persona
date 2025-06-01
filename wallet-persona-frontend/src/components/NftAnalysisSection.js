@@ -13,11 +13,15 @@ const truncateName = (name, maxLength) => {
 };
 
 const NftSampleItem = ({ nft }) => {
-    const [imgSrc, setImgSrc] = React.useState(nft.imageUrl?.startsWith('ipfs://') ? nft.imageUrl.replace('ipfs://', 'https://ipfs.io/ipfs/') : nft.imageUrl);
+    const initialImgSrc = nft.imageUrl?.startsWith('ipfs://') ? nft.imageUrl.replace('ipfs://', 'https://ipfs.io/ipfs/') : nft.imageUrl;
+    const [imgSrc, setImgSrc] = React.useState(initialImgSrc);
     const [imgError, setImgError] = React.useState(false);
+
+    console.log(`[NftSampleItem] NFT: ${nft.name || nft.tokenId}, Initial imageUrl: ${nft.imageUrl}, Processed imgSrc: ${initialImgSrc}`);
 
     const onError = () => {
         if (!imgError) { // Prevent infinite loop if placeholder also fails, though unlikely
+            console.error(`[NftSampleItem] Error loading image for NFT: ${nft.name || nft.tokenId}, URL: ${imgSrc}. Setting fallback.`);
             setImgError(true);
             setImgSrc('https://via.placeholder.com/80?text=No+Image'); // Fallback placeholder
         }
@@ -52,14 +56,22 @@ const CollectionCard = ({ collection }) => {
         navigator.clipboard.writeText(text).catch(err => console.error('Failed to copy address: ', err));
     };
 
+    const initialCollectionLogo = collection.collectionLogo?.startsWith('ipfs://') ? collection.collectionLogo.replace('ipfs://', 'https://ipfs.io/ipfs/') : collection.collectionLogo;
+    console.log(`[CollectionCard] Collection: ${collection.name}, Initial logo: ${collection.collectionLogo}, Processed logo: ${initialCollectionLogo}`);
+
+    const onLogoError = (e) => {
+        console.error(`[CollectionCard] Error loading logo for collection: ${collection.name}, URL: ${e.target.src}. Hiding image.`);
+        e.target.style.display = 'none';
+    };
+
     const collectionName = truncateName(collection.name, MAX_COLLECTION_NAME_LENGTH);
 
     return (
         <div className="collection-card">
             <div className="collection-header">
                 <div className="collection-logo-container">
-                    {collection.collectionLogo ? (
-                        <img src={collection.collectionLogo.startsWith('ipfs://') ? collection.collectionLogo.replace('ipfs://', 'https://ipfs.io/ipfs/') : collection.collectionLogo} alt={`${collection.name || 'Collection'} Logo`} className="collection-logo" onError={(e) => e.target.style.display = 'none'} />
+                    {initialCollectionLogo ? (
+                        <img src={initialCollectionLogo} alt={`${collection.name || 'Collection'} Logo`} className="collection-logo" onError={onLogoError} />
                     ) : (
                         <FontAwesomeIcon icon={faPalette} className="collection-logo-placeholder" />
                     )}
