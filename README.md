@@ -34,11 +34,6 @@
 
 Wallet Persona Analyzer is a sophisticated blockchain analytics platform that transforms raw Ethereum wallet data into comprehensive, AI-enhanced personality profiles with personalized NFT recommendations. The system analyzes transaction patterns, DeFi activity, NFT collections, and on-chain behavior to create detailed personas that reveal insights about cryptocurrency users' investment strategies, risk profiles, and blockchain engagement patterns.
 
-<div align="center">
-  <img src="./Screenshot 2025-06-01 173303.png" alt="Wallet Persona Analyzer Main Dashboard" width="800"/>
-  <p><em>Main dashboard showing comprehensive wallet analysis with AI-generated persona</em></p>
-</div>
-
 ### Key Differentiators
 
 **AI-Powered Analysis**: Integration with Google Gemini AI provides intelligent pattern recognition and behavioral analysis beyond traditional on-chain metrics.
@@ -70,8 +65,8 @@ Wallet Persona Analyzer is a sophisticated blockchain analytics platform that tr
 - Risk-adjusted suggestions matching user trading profiles
 
 <div align="center">
-  <img src="./Screenshot 2025-06-01 173312.png" alt="NFT Recommendation Engine" width="700"/>
-  <p><em>AI-powered NFT recommendations with detailed market analysis and personalized insights</em></p>
+  <img src="./Screenshot 2025-06-01 173339.png" alt="NFT Recommendation Engine" width="700"/>
+  <p><em>AI-powered NFT recommendations with detailed market analysis and personalized insights based on wallet behavior</em></p>
 </div>
 
 **NFT Portfolio Analysis**
@@ -82,8 +77,8 @@ Wallet Persona Analyzer is a sophisticated blockchain analytics platform that tr
 - Cross-marketplace activity analysis and arbitrage opportunity detection
 
 <div align="center">
-  <img src="./Screenshot 2025-06-01 173319.png" alt="NFT Portfolio Analysis" width="700"/>
-  <p><em>Detailed NFT collection analysis with market trends and trading patterns</em></p>
+  <img src="./Screenshot 2025-06-01 173331.png" alt="NFT Portfolio Analysis" width="700"/>
+  <p><em>Detailed NFT collection showcase with holdings breakdown and collection statistics</em></p>
 </div>
 
 **Market Intelligence Integration**
@@ -154,12 +149,22 @@ The platform implements a comprehensive risk assessment system combining determi
 - Asset concentration risk calculation
 - Temporal activity pattern analysis
 
+<div align="center">
+  <img src="./Screenshot 2025-06-01 173405.png" alt="Detailed Transaction Analysis" width="700"/>
+  <p><em>Comprehensive transaction analysis showing gas usage, activity patterns, and counterparty analysis</em></p>
+</div>
+
 **AI-Enhanced Risk Analysis**
 - Behavioral anomaly detection using machine learning
 - Pattern recognition for suspicious activities
 - Smart contract interaction risk assessment
 - Cross-reference with known risk databases
 - Predictive risk modeling based on similar wallet behaviors
+
+<div align="center">
+  <img src="./Screenshot 2025-06-01 173413.png" alt="Advanced Transaction Analysis" width="700"/>
+  <p><em>Advanced transaction analysis with hourly activity patterns and detailed counterparty breakdown</em></p>
+</div>
 
 **Risk Score Calculation**
 The final risk score (0-100 scale) combines:
@@ -208,8 +213,8 @@ The final risk score (0-100 scale) combines:
 - Rebalancing recommendations
 
 <div align="center">
-  <img src="./Screenshot 2025-06-01 173331.png" alt="Asset Distribution Dashboard" width="700"/>
-  <p><em>Interactive asset distribution charts with portfolio optimization insights</em></p>
+  <img src="./Screenshot 2025-06-01 173319.png" alt="Analytics Dashboard" width="700"/>
+  <p><em>Comprehensive analytics dashboard with asset distribution, risk assessment, and wallet profile highlights</em></p>
 </div>
 
 **Transaction Journey Timeline**
@@ -220,8 +225,8 @@ The final risk score (0-100 scale) combines:
 - Contextual transaction analysis
 
 <div align="center">
-  <img src="./Screenshot 2025-06-01 173339.png" alt="Wallet Journey Timeline" width="700"/>
-  <p><em>Comprehensive wallet journey timeline showing transaction history and key events</em></p>
+  <img src="./Screenshot 2025-06-01 173422.png" alt="Wallet Journey Timeline" width="700"/>
+  <p><em>Interactive wallet journey timeline showing chronological transaction history with detailed event information</em></p>
 </div>
 
 **Activity Heatmap Generation**
@@ -247,8 +252,8 @@ The final risk score (0-100 scale) combines:
 - Avatar evolution based on changing behavior patterns
 
 <div align="center">
-  <img src="./Screenshot 2025-06-01 173413.png" alt="AI-Generated Persona Profile" width="700"/>
-  <p><em>AI-generated persona with detailed behavioral analysis and investment insights</em></p>
+  <img src="./Screenshot 2025-06-01 173303.png" alt="AI-Generated Persona Avatar and Biography" width="700"/>
+  <p><em>AI-generated persona with custom avatar and detailed behavioral biography</em></p>
 </div>
 
 **Voice Narration System**
@@ -264,17 +269,17 @@ The final risk score (0-100 scale) combines:
 - Market outlook prediction
 - Behavioral psychology analysis
 
-<div align="center">
-  <img src="./Screenshot 2025-06-01 173422.png" alt="Detailed Analysis Dashboard" width="700"/>
-  <p><em>Comprehensive analysis dashboard with risk assessment and trading behavior insights</em></p>
-</div>
-
 **Behavioral Insight Engine**
 - Trading psychology evaluation
 - Decision-making pattern analysis
 - Emotional trading indicator detection
 - Cognitive bias identification
 - Investment motivation assessment
+
+<div align="center">
+  <img src="./Screenshot 2025-06-01 173422.png" alt="Detailed Analysis Dashboard" width="700"/>
+  <p><em>Comprehensive analysis dashboard with risk assessment and trading behavior insights</em></p>
+</div>
 
 ---
 
@@ -747,8 +752,8 @@ analyzeWallet('0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045')
 ```
 
 <div align="center">
-  <img src="./Screenshot 2025-06-01 173405.png" alt="Basic Wallet Information Display" width="700"/>
-  <p><em>Basic wallet information with balance, tokens, and transaction statistics</em></p>
+  <img src="./Screenshot 2025-06-01 173312.png" alt="Basic Wallet Information Display" width="700"/>
+  <p><em>Activity snapshot, portfolio overview, and chain information showing wallet fundamentals</em></p>
 </div>
 
 ### Advanced Metrics Extraction
@@ -945,6 +950,11 @@ The application leverages Google's Gemini AI for sophisticated analysis beyond t
 - DApp recommendations that align with user behavior patterns and complement existing DeFi positions
 - NFT collection recommendations with detailed market analysis and timing insights
 - Educational content curation tailored to user's current knowledge level and areas of interest
+
+<div align="center">
+  <img src="./Screenshot 2025-06-01 173436.png" alt="Interactive Wallet Persona Bot" width="400"/>
+  <p><em>AI-powered chatbot interface allowing users to interact directly with their wallet persona for recommendations and insights</em></p>
+</div>
 
 ### AI Configuration and Customization
 
@@ -1548,45 +1558,4 @@ Add any other context about the problem here.
 **Community Support**
 - **GitHub Issues**: Report bugs and request features
 - **GitHub Discussions**: Ask questions and share ideas
-- **Stack Overflow**: Use tag `wallet-persona-analyzer` for technical questions
-
-**Professional Support**
-- **Email**: support@wallet-persona-analyzer.com
-- **Priority Support**: Available for enterprise customers
-- **Custom Development**: Contact for custom analytics features
-
-### Contributing to Documentation
-
-We welcome improvements to documentation:
-- Fix typos and clarify confusing sections
-- Add usage examples and tutorials
-- Improve API documentation with more examples
-- Translate documentation to other languages
-
-### License
-
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for the full license text.
-
-```
-MIT License
-
-Copyright (c) 2024 Wallet Persona Analyzer
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-``` 
+- **Stack Overflow**: Use tag `
