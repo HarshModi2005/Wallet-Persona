@@ -1,7 +1,7 @@
 # Wallet Persona Analyzer
 
 <div align="center">
-  <img src="./wallet-persona-frontend/public/logo_transparent.png" alt="Wallet Persona Analyzer Logo" width="200"/>
+  <img src="./images/wallet-persona-frontend/public/logo_transparent.png" alt="Wallet Persona Analyzer Logo" width="200"/>
   
   **An advanced blockchain wallet analysis platform that generates detailed on-chain personas for Ethereum wallet addresses using AI-powered insights and personalized NFT recommendations.**
   
@@ -65,7 +65,7 @@ Wallet Persona Analyzer is a sophisticated blockchain analytics platform that tr
 - Risk-adjusted suggestions matching user trading profiles
 
 <div align="center">
-  <img src="./Screenshot 2025-06-01 173339.png" alt="NFT Recommendation Engine" width="700"/>
+  <img src="./images/Screenshot 2025-06-01 173339.png" alt="NFT Recommendation Engine" width="700"/>
   <p><em>AI-powered NFT recommendations with detailed market analysis and personalized insights based on wallet behavior</em></p>
 </div>
 
@@ -77,7 +77,7 @@ Wallet Persona Analyzer is a sophisticated blockchain analytics platform that tr
 - Cross-marketplace activity analysis and arbitrage opportunity detection
 
 <div align="center">
-  <img src="./Screenshot 2025-06-01 173331.png" alt="NFT Portfolio Analysis" width="700"/>
+  <img src="./images/Screenshot 2025-06-01 173331.png" alt="NFT Portfolio Analysis" width="700"/>
   <p><em>Detailed NFT collection showcase with holdings breakdown and collection statistics</em></p>
 </div>
 
@@ -150,7 +150,7 @@ The platform implements a comprehensive risk assessment system combining determi
 - Temporal activity pattern analysis
 
 <div align="center">
-  <img src="./Screenshot 2025-06-01 173405.png" alt="Detailed Transaction Analysis" width="700"/>
+  <img src="./images/Screenshot 2025-06-01 173405.png" alt="Detailed Transaction Analysis" width="700"/>
   <p><em>Comprehensive transaction analysis showing gas usage, activity patterns, and counterparty analysis</em></p>
 </div>
 
@@ -162,7 +162,7 @@ The platform implements a comprehensive risk assessment system combining determi
 - Predictive risk modeling based on similar wallet behaviors
 
 <div align="center">
-  <img src="./Screenshot 2025-06-01 173413.png" alt="Advanced Transaction Analysis" width="700"/>
+  <img src="./images/Screenshot 2025-06-01 173413.png" alt="Advanced Transaction Analysis" width="700"/>
   <p><em>Advanced transaction analysis with hourly activity patterns and detailed counterparty breakdown</em></p>
 </div>
 
@@ -213,7 +213,7 @@ The final risk score (0-100 scale) combines:
 - Rebalancing recommendations
 
 <div align="center">
-  <img src="./Screenshot 2025-06-01 173319.png" alt="Analytics Dashboard" width="700"/>
+  <img src="./images/Screenshot 2025-06-01 173319.png" alt="Analytics Dashboard" width="700"/>
   <p><em>Comprehensive analytics dashboard with asset distribution, risk assessment, and wallet profile highlights</em></p>
 </div>
 
@@ -225,7 +225,7 @@ The final risk score (0-100 scale) combines:
 - Contextual transaction analysis
 
 <div align="center">
-  <img src="./Screenshot 2025-06-01 173422.png" alt="Wallet Journey Timeline" width="700"/>
+  <img src="./images/Screenshot 2025-06-01 173422.png" alt="Wallet Journey Timeline" width="700"/>
   <p><em>Interactive wallet journey timeline showing chronological transaction history with detailed event information</em></p>
 </div>
 
@@ -252,7 +252,7 @@ The final risk score (0-100 scale) combines:
 - Avatar evolution based on changing behavior patterns
 
 <div align="center">
-  <img src="./Screenshot 2025-06-01 173303.png" alt="AI-Generated Persona Avatar and Biography" width="700"/>
+  <img src="./images/Screenshot 2025-06-01 173303.png" alt="AI-Generated Persona Avatar and Biography" width="700"/>
   <p><em>AI-generated persona with custom avatar and detailed behavioral biography</em></p>
 </div>
 
@@ -277,7 +277,7 @@ The final risk score (0-100 scale) combines:
 - Investment motivation assessment
 
 <div align="center">
-  <img src="./Screenshot 2025-06-01 173422.png" alt="Detailed Analysis Dashboard" width="700"/>
+  <img src="./images/Screenshot 2025-06-01 173422.png" alt="Detailed Analysis Dashboard" width="700"/>
   <p><em>Comprehensive analysis dashboard with risk assessment and trading behavior insights</em></p>
 </div>
 
@@ -752,7 +752,7 @@ analyzeWallet('0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045')
 ```
 
 <div align="center">
-  <img src="./Screenshot 2025-06-01 173312.png" alt="Basic Wallet Information Display" width="700"/>
+  <img src="./images/Screenshot 2025-06-01 173312.png" alt="Basic Wallet Information Display" width="700"/>
   <p><em>Activity snapshot, portfolio overview, and chain information showing wallet fundamentals</em></p>
 </div>
 
@@ -908,7 +908,7 @@ const createAssetDistributionChart = (tokens, canvasId) => {
 ```
 
 <div align="center">
-  <img src="./Screenshot 2025-06-01 173436.png" alt="Advanced Visualization Features" width="700"/>
+  <img src="./images/Screenshot 2025-06-01 173436.png" alt="Advanced Visualization Features" width="700"/>
   <p><em>Interactive charts and advanced visualization components for portfolio analysis</em></p>
 </div>
 
@@ -952,7 +952,7 @@ The application leverages Google's Gemini AI for sophisticated analysis beyond t
 - Educational content curation tailored to user's current knowledge level and areas of interest
 
 <div align="center">
-  <img src="./Screenshot 2025-06-01 173436.png" alt="Interactive Wallet Persona Bot" width="400"/>
+  <img src="./images/Screenshot 2025-06-01 173436.png" alt="Interactive Wallet Persona Bot" width="400"/>
   <p><em>AI-powered chatbot interface allowing users to interact directly with their wallet persona for recommendations and insights</em></p>
 </div>
 
