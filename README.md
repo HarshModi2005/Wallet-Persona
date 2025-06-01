@@ -1,7 +1,7 @@
 # Wallet Persona Analyzer
 
 <div align="center">
-  <img src="./images/wallet-persona-frontend/public/logo_transparent.png" alt="Wallet Persona Analyzer Logo" width="200"/>
+  <img src="./images/logo_transparent.png" alt="Wallet Persona Analyzer Logo" width="200"/>
   
   **An advanced blockchain wallet analysis platform that generates detailed on-chain personas for Ethereum wallet addresses using AI-powered insights and personalized NFT recommendations.**
   
