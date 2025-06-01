@@ -1,5 +1,6 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { WalletBalance, TokenBalance, HistoricalActivityMetric, KeyEvent, WalletProfile, NFT } from '../types/wallet.types';
+import { OpenSeaCollection, NftRecommendationResult } from '../types/opensea.types';
 
 export class GeminiAIService {
   private genAI: GoogleGenerativeAI;
@@ -372,7 +373,7 @@ export class GeminiAIService {
     const defaultBio = `I'm a wallet on the Ethereum blockchain (${walletAddress.substring(0,6)}...). I've made ${profile.totalTransactions} transactions and currently hold ${balanceDetails.native} ETH.`;
     const defaultAvatarName = "Crypto Citizen";
     const defaultAvatarBio = "Exploring the decentralized world.";
-
+    
     return {
       tradingProfile: "General User",
       activityLevel: activityLevel,
@@ -420,5 +421,130 @@ export class GeminiAIService {
     const tradingProfile = walletData.tradingProfile || 'Occasional';
     
     return `A blockchain explorer venturing through the Ethereum ecosystem. ${activityLevel} on the network. ${tradingProfile} trader with an interest in DeFi.`;
+  }
+
+  // New method for NFT Collection Recommendations
+  async getNftCollectionRecommendations(
+    ownedNfts: Pick<NFT, 'name' | 'collectionName' | 'symbol'>[],
+    trendingCollections: OpenSeaCollection[],
+    personaSummary?: string, // Optional overall persona summary
+    walletAddress?: string // Optional wallet address for more context
+  ): Promise<NftRecommendationResult[]> {
+    if (!this.genAI || !process.env.GEMINI_API_KEY || trendingCollections.length === 0) {
+      console.warn('[GeminiAIService.getNftCollectionRecommendations] Missing API key, AI instance, or no trending collections provided. Returning empty recommendations.');
+      return [];
+    }
+
+    const ownedNftsSummary = ownedNfts.length > 0
+      ? ownedNfts.slice(0, 15).map(nft => `- ${nft.name || 'Unnamed NFT'}${nft.collectionName ? ` (from collection: ${nft.collectionName})` : (nft.symbol ? ` (symbol: ${nft.symbol})` : '')}`).join('\\n')
+      : 'This user currently holds no NFTs or very few.';
+
+    const trendingCollectionsSummary = trendingCollections
+      .slice(0, 30) // Limit to a reasonable number for the prompt
+      .map((col, idx) => `${idx + 1}. NAME: "${col.name}", SLUG: "${col.collection}", DESCRIPTION: "${(col.description || 'No description available.').substring(0, 150)}..."`)
+      .join('\\n');
+
+    let promptContext = `
+      You are an expert NFT curator AI. Your goal is to recommend NFT collections to a user based on their existing holdings and a list of currently trending collections.
+      Consider the themes, art styles, and types of NFTs the user already owns to infer their preferences.
+    `;
+
+    if (walletAddress) {
+      promptContext += `\\nWallet Address for context (do not mention this address in your output): ${walletAddress}`;
+    }
+    if (personaSummary) {
+      promptContext += `\\nUser's Overall Persona Summary: "${personaSummary}"`;
+    }
+
+    const prompt = `
+      ${promptContext}
+
+      User's Owned NFTs (summary):
+      ${ownedNftsSummary}
+
+      List of Trending/Popular NFT Collections (name, slug, and description provided):
+      ${trendingCollectionsSummary}
+
+      Instructions:
+      1. Analyze the user's owned NFTs to understand their potential interests (e.g., PFPs, art, gaming, utility).
+      2. From the "List of Trending/Popular NFT Collections", select exactly 3 unique collections that would be a good match for this user.
+      3. For each selected collection, provide a concise (1-2 sentences) justification explaining *why* it's a suitable recommendation for this specific user, referencing their existing NFTs or inferred preferences if possible.
+      4. VERY IMPORTANT: Your response MUST be a valid JSON array of objects. Each object in the array must have two keys:
+         a. "collection_slug": A string containing the exact "SLUG" of the recommended collection from the provided trending list.
+         b. "justification": A string containing your justification for recommending that collection.
+
+      Example of the desired JSON output format:
+      [
+        {
+          "collection_slug": "cryptopunks",
+          "justification": "Given your interest in foundational PFP projects like [Owned Collection A], CryptoPunks represents a blue-chip asset in the same category."
+        },
+        {
+          "collection_slug": "artblocks-explorations",
+          "justification": "Your collection of [Owned Collection B] suggests an appreciation for generative art, and ArtBlocks Explorations offers diverse and innovative pieces."
+        }
+      ]
+
+      Ensure the output is ONLY the JSON array, with no other text before or after it.
+    `;
+
+    try {
+      console.log('[GeminiAIService.getNftCollectionRecommendations] Generating NFT recommendations. Prompt snippet:', prompt.substring(0, 500) + "...");
+      const result = await this.model.generateContent(prompt);
+      const response = await result.response;
+      const text = response.text();
+      console.log('[GeminiAIService.getNftCollectionRecommendations] Raw response from Gemini:', text);
+
+      let jsonOutput;
+      let jsonStringToParse = text.trim(); // Trim whitespace first
+
+      try {
+        // Regex to extract content from ```json ... ``` block, more flexibly
+        // It looks for ``` optionally followed by 'json', then a newline, then captures everything until the closing ```.
+        const markdownMatch = jsonStringToParse.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/);
+        
+        if (markdownMatch && markdownMatch[1]) {
+          jsonStringToParse = markdownMatch[1].trim(); // Use the content inside the markdown block
+          console.log('[GeminiAIService.getNftCollectionRecommendations] Extracted JSON string from markdown block:', jsonStringToParse);
+        } else {
+          console.log('[GeminiAIService.getNftCollectionRecommendations] No markdown block detected, attempting to parse trimmed response directly.');
+        }
+        
+        jsonOutput = JSON.parse(jsonStringToParse);
+
+      } catch (e) {
+        console.error('[GeminiAIService.getNftCollectionRecommendations] Failed to parse JSON response from Gemini. Error:', e, 'Attempted to parse string:', jsonStringToParse);
+        return [];
+      }
+      
+      if (!Array.isArray(jsonOutput)) {
+        console.error('[GeminiAIService.getNftCollectionRecommendations] Parsed response is not an array. Response:', jsonOutput);
+        return [];
+      }
+
+      const recommendations: NftRecommendationResult[] = [];
+      for (const item of jsonOutput) {
+        if (item && typeof item.collection_slug === 'string' && typeof item.justification === 'string') {
+          const recommendedCollection = trendingCollections.find(tc => tc.collection === item.collection_slug);
+          if (recommendedCollection) {
+            recommendations.push({
+              collection: recommendedCollection,
+              reason: item.justification,
+            });
+          } else {
+            console.warn(`[GeminiAIService.getNftCollectionRecommendations] Recommended collection slug "${item.collection_slug}" not found in the provided trending list.`);
+          }
+        } else {
+          console.warn('[GeminiAIService.getNftCollectionRecommendations] Invalid item structure in parsed JSON response:', item);
+        }
+      }
+      
+      console.log(`[GeminiAIService.getNftCollectionRecommendations] Successfully generated ${recommendations.length} NFT recommendations.`);
+      return recommendations.slice(0, 4); // Return up to 4 recommendations
+
+    } catch (error) {
+      console.error('[GeminiAIService.getNftCollectionRecommendations] Error generating NFT recommendations:', error);
+      return [];
+    }
   }
 } 

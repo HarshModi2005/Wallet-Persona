@@ -1,0 +1,191 @@
+/* NftRecommendations.css */
+
+.nft-recommendations-section {
+    margin-top: 2rem;
+    margin-bottom: 2rem;
+    background-color: var(--bs-gray-900);
+    /* Darker background for the main section card */
+    border: 1px solid var(--bs-gray-700);
+}
+
+.nft-recommendations-section .card-header.section-header {
+    background-color: var(--bs-gray-800);
+    /* Slightly lighter header */
+    color: var(--bs-light);
+    border-bottom: 1px solid var(--bs-gray-700);
+    padding: 1rem 1.25rem;
+    font-size: 1.25rem;
+    /* Match NftAnalysisSection header */
+}
+
+.nft-recommendations-section .card-header.section-header h3 {
+    margin-bottom: 0;
+    font-weight: 500;
+    /* Match NftAnalysisSection header */
+}
+
+.nft-recommendations-section .card-body {
+    padding: 1.5rem;
+}
+
+.nft-recommendations-section .card-body p {
+    color: var(--bs-gray-400);
+}
+
+.nft-recommendations-section .card-body .text-center p {
+    color: var(--bs-gray-300);
+}
+
+
+.recommendations-intro {
+    font-size: 0.95rem;
+    color: var(--bs-gray-300);
+    margin-bottom: 1.5rem;
+    text-align: center;
+}
+
+.recommendations-grid {
+    display: grid;
+    /* Using 2 columns for recommendations to make them stand out a bit more */
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+    gap: 1.5rem;
+    /* Consistent gap */
+}
+
+.recommended-collection-card {
+    background-color: var(--bs-gray-800);
+    border: 1px solid var(--bs-gray-700);
+    border-radius: 0.375rem;
+    /* Standard Bootstrap card radius */
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    color: var(--bs-gray-300);
+}
+
+.recommended-collection-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+    /* Enhanced shadow for dark theme */
+}
+
+.recommended-collection-image-container {
+    width: 100%;
+    height: 180px;
+    /* Fixed height for image container */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--bs-gray-700);
+    /* Placeholder background */
+    border-radius: 0.25rem;
+    margin-bottom: 1rem;
+    overflow: hidden;
+}
+
+.recommended-collection-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    /* Cover the area, might crop */
+}
+
+.recommended-collection-image-placeholder {
+    font-size: 3rem;
+    color: var(--bs-gray-500);
+}
+
+.recommended-collection-info {
+    flex-grow: 1;
+    /* Allows info to take up space before links */
+}
+
+.recommended-collection-name {
+    font-size: 1.2rem;
+    /* Slightly larger than NftAnalysisSection collection name */
+    font-weight: 600;
+    color: var(--bs-light);
+    margin-bottom: 0.5rem;
+}
+
+.recommended-collection-description {
+    font-size: 0.85rem;
+    color: var(--bs-gray-400);
+    margin-bottom: 0.75rem;
+    line-height: 1.4;
+}
+
+.recommendation-reason {
+    background-color: rgba(var(--bs-info-rgb), 0.1);
+    /* Subtle highlight for the reason */
+    border-left: 3px solid var(--bs-info);
+    padding: 0.5rem 0.75rem;
+    margin-top: 0.5rem;
+    margin-bottom: 1rem;
+    font-size: 0.8rem;
+    color: var(--bs-gray-300);
+    border-radius: 0.25rem;
+    display: flex;
+    align-items: flex-start;
+    /* Align icon and text nicely */
+}
+
+.recommendation-reason .reason-icon {
+    color: var(--bs-info);
+    margin-right: 0.5rem;
+    margin-top: 0.1rem;
+    /* Adjust for better vertical alignment */
+}
+
+.recommendation-reason .reason-text {
+    margin-bottom: 0;
+    color: var(--bs-gray-200);
+    /* Slightly brighter text for reason */
+}
+
+
+.recommended-collection-links {
+    margin-top: auto;
+    /* Pushes links to the bottom */
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--bs-gray-700);
+    display: flex;
+    justify-content: space-between;
+    /* Spreads out links if multiple */
+    gap: 0.5rem;
+    /* Gap between links */
+}
+
+.recommended-collection-links .link-button {
+    flex-grow: 1;
+    /* Makes buttons take equal width if possible */
+    text-align: center;
+}
+
+.recommended-collection-links .btn-outline-light {
+    color: var(--bs-gray-200);
+    border-color: var(--bs-gray-500);
+}
+
+.recommended-collection-links .btn-outline-light:hover {
+    background-color: var(--bs-gray-700);
+    color: var(--bs-light);
+    border-color: var(--bs-gray-600);
+}
+
+/* Ensure btn-info is styled for dark theme */
+.recommended-collection-links .btn-info {
+    background-color: var(--bs-info);
+    border-color: var(--bs-info);
+    color: var(--bs-dark);
+    /* Good contrast on info background */
+}
+
+.recommended-collection-links .btn-info:hover {
+    background-color: var(--bs-info-hover, #31d2f2);
+    /* Define --bs-info-hover or use a slightly lighter/darker shade */
+    border-color: var(--bs-info-hover, #31d2f2);
+    color: var(--bs-dark);
+}

@@ -6,6 +6,7 @@ import MainPersonaSection from './components/MainPersonaSection';
 import BasicWalletInfo from './components/BasicWalletInfo';
 import DetailedAnalysisSection from './components/DetailedAnalysisSection';
 import NftAnalysisSection from './components/NftAnalysisSection';
+import NftRecommendations from './components/NftRecommendations/NftRecommendations';
 import AssetDistributionChart from './components/AssetDistributionChart';
 import WalletJourneyTimeline from './components/WalletJourneyTimeline';
 import DeFiSummarySection from './components/DeFiSummarySection';
@@ -38,6 +39,7 @@ function App() {
   const defiSummaryRef = useRef(null);
   const analyticsDashboardRef = useRef(null);
   const nftAnalysisRef = useRef(null);
+  const nftRecommendationsRef = useRef(null);
   const detailedTxAnalysisRef = useRef(null);
   const walletJourneyRef = useRef(null);
 
@@ -140,6 +142,7 @@ function App() {
       defiSummaryRef.current,
       analyticsDashboardRef.current,
       nftAnalysisRef.current,
+      nftRecommendationsRef.current,
       detailedTxAnalysisRef.current,
       walletJourneyRef.current,
     ].filter(Boolean); // Filter out null refs if sections aren't rendered
@@ -360,6 +363,15 @@ function App() {
               )}
             </div>
           </section>
+
+          {/* NFT Recommendations Section */}
+          {walletData.persona?.nftRecommendations && walletData.persona.nftRecommendations.length > 0 && (
+            <section id="nft-recommendations" className="mb-4 full-page-section" ref={nftRecommendationsRef}>
+              <div className="container-fluid nft-recommendations-container fade-in-section">
+                <NftRecommendations recommendations={walletData.persona.nftRecommendations} />
+              </div>
+            </section>
+          )}
 
           {/* Detailed Transaction Analysis Section */}
           <section id="detailed-transaction-analysis" className="mb-4 full-page-section" ref={detailedTxAnalysisRef}>

@@ -3,6 +3,8 @@ import { GeminiAIService } from './GeminiAIService';
 import { ethers } from 'ethers';
 import { ImageGenerationService } from './ImageGenerationService';
 import { ElevenLabsService } from './ElevenLabsService';
+import { OpenSeaService } from './OpenSeaService';
+import { NftRecommendationResult } from '../types/opensea.types';
 
 export interface WalletPersona {
   category: string[];  // investor, collector, trader, DAO member, etc.
@@ -48,19 +50,22 @@ export interface WalletPersona {
   userCategory: string;
   tradingProfile: string;
   profileSummary?: Partial<WalletProfile>;
+  nftRecommendations?: NftRecommendationResult[];
 }
 
 export class WalletPersonaService {
   private aiService: GeminiAIService;
   private imageGenerationService: ImageGenerationService;
   private elevenLabsService: ElevenLabsService;
+  private openSeaService: OpenSeaService;
   private readonly thirtyDaysInMs = 30 * 24 * 60 * 60 * 1000;
   private readonly oneYearInMs = 365 * 24 * 60 * 60 * 1000;
 
-  constructor() {
+  constructor(openSeaApiKey?: string) {
     this.aiService = new GeminiAIService();
     this.imageGenerationService = new ImageGenerationService(process.env.IMAGE_API_KEY);
     this.elevenLabsService = new ElevenLabsService(process.env.ELEVENLABS_API_KEY);
+    this.openSeaService = new OpenSeaService(openSeaApiKey || process.env.OPENSEA_API_KEY);
   }
 
   async generatePersona(walletDetails: WalletDetails): Promise<WalletPersona> {
@@ -121,12 +126,44 @@ export class WalletPersonaService {
         keyCategories: this.determineWalletCategory(aiAnalysis)
       });
 
-      const formattedRecommendations = {
+      const formattedRecommendations: {
+        tokens: string[];
+        dapps: string[];
+        actionableInsights: string[];
+        nfts: string[];
+      } = {
         tokens: recommendationsFromAI.tokens?.map((token: any) => token.symbol) || [],
         dapps: recommendationsFromAI.dapps?.map((dapp: any) => dapp.name) || [],
         actionableInsights: aiAnalysis.actionableInsights || [],
-        nfts: [] // Placeholder for NFT recommendations if added later
+        nfts: []
       };
+
+      // Fetch NFT Recommendations
+      let nftRecommendationsResults: NftRecommendationResult[] = [];
+      try {
+        console.log('[WalletPersonaService] Attempting to fetch and process NFT recommendations.');
+        const trendingOpenSeaCollections = await this.openSeaService.getRankedCollections('seven_day_volume', 30);
+        if (trendingOpenSeaCollections.length > 0) {
+          const ownedNftInfo = (walletDetails.nfts || []).map(nft => ({
+            name: nft.name,
+            collectionName: nft.collectionName,
+            symbol: nft.symbol,
+          }));
+          
+          nftRecommendationsResults = await this.aiService.getNftCollectionRecommendations(
+            ownedNftInfo,
+            trendingOpenSeaCollections,
+            aiAnalysis.bio,
+            walletDetails.address
+          );
+          console.log(`[WalletPersonaService] Received ${nftRecommendationsResults.length} NFT recommendations from AI.`);
+          formattedRecommendations.nfts = nftRecommendationsResults.map(rec => rec.collection.name);
+        } else {
+          console.log('[WalletPersonaService] No trending OpenSea collections fetched, skipping AI recommendations for NFTs.');
+        }
+      } catch (recError) {
+        console.error('[WalletPersonaService] Error during NFT recommendation fetching/processing:', recError);
+      }
 
       const calculatedWalletAge = this._calculateWalletAge(walletDetails.profile?.firstTransactionDate);
       const calculatedActivitySummary = this._calculateActivitySummary(walletDetails.transactions || []);
@@ -171,7 +208,7 @@ export class WalletPersonaService {
       return {
         category: this.determineWalletCategory(aiAnalysis),
         userCategory: aiAnalysis.userCategory || "Unknown",
-        tags: finalTags, // Use the refined tags
+        tags: finalTags,
         bio: aiAnalysis.bio,
         avatarName: aiAnalysis.avatarName,
         avatarBio: aiAnalysis.avatarBio,
@@ -193,7 +230,8 @@ export class WalletPersonaService {
         },
         profileSummary: profileSummaryForChatling,
         preferredTokens: aiAnalysis.suggestedTokens || [],
-        topCollections: profileForAI.topNftCollections?.map(c => c.name || c.contractAddress).slice(0,3) || []
+        topCollections: profileForAI.topNftCollections?.map(c => c.name || c.contractAddress).slice(0,3) || [],
+        nftRecommendations: nftRecommendationsResults.length > 0 ? nftRecommendationsResults : undefined
       };
     } catch (error) {
       console.error('Error generating wallet persona:', error);
@@ -445,7 +483,8 @@ export class WalletPersonaService {
       }, 
       profileSummary: undefined,
       preferredTokens: [],
-      topCollections: []
+      topCollections: [],
+      nftRecommendations: undefined
     };
   }
 

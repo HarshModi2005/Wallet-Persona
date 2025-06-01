@@ -17,7 +17,7 @@ const rpcUrl = process.env.RPC_URL || 'https://ethereum-rpc.publicnode.com';
 
 const walletService = new WalletService(apiKey, rpcUrl);
 // const geminiService = new GeminiAIService(process.env.GEMINI_API_KEY); // WalletPersonaService now creates its own
-const walletPersonaService = new WalletPersonaService(); // Constructor takes no arguments now
+const walletPersonaService = new WalletPersonaService(process.env.OPENSEA_API_KEY); // Pass OpenSea API key
 
 // Detailed CORS configuration
 app.use(cors({
