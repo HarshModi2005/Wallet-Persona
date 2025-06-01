@@ -1,11 +1,15 @@
 # Wallet Persona Analyzer
 
-**An advanced blockchain wallet analysis platform that generates detailed on-chain personas for Ethereum wallet addresses using AI-powered insights.**
-
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=flat&logo=typescript&logoColor=white)](https://typescriptlang.org/)
-[![React](https://img.shields.io/badge/React-20232A?style=flat&logo=react&logoColor=61DAFB)](https://reactjs.org/)
-[![Node.js](https://img.shields.io/badge/Node.js-43853D?style=flat&logo=node.js&logoColor=white)](https://nodejs.org/)
+<div align="center">
+  <img src="./wallet-persona-frontend/public/logo_transparent.png" alt="Wallet Persona Analyzer Logo" width="200"/>
+  
+  **An advanced blockchain wallet analysis platform that generates detailed on-chain personas for Ethereum wallet addresses using AI-powered insights and personalized NFT recommendations.**
+  
+  [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+  [![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=flat&logo=typescript&logoColor=white)](https://typescriptlang.org/)
+  [![React](https://img.shields.io/badge/React-20232A?style=flat&logo=react&logoColor=61DAFB)](https://reactjs.org/)
+  [![Node.js](https://img.shields.io/badge/Node.js-43853D?style=flat&logo=node.js&logoColor=white)](https://nodejs.org/)
+</div>
 
 ---
 
@@ -28,25 +32,66 @@
 
 ## Overview
 
-Wallet Persona Analyzer is a sophisticated blockchain analytics platform that transforms raw Ethereum wallet data into comprehensive, AI-enhanced personality profiles. The system analyzes transaction patterns, DeFi activity, NFT collections, and on-chain behavior to create detailed personas that reveal insights about cryptocurrency users' investment strategies, risk profiles, and blockchain engagement patterns.
+Wallet Persona Analyzer is a sophisticated blockchain analytics platform that transforms raw Ethereum wallet data into comprehensive, AI-enhanced personality profiles with personalized NFT recommendations. The system analyzes transaction patterns, DeFi activity, NFT collections, and on-chain behavior to create detailed personas that reveal insights about cryptocurrency users' investment strategies, risk profiles, and blockchain engagement patterns.
+
+<div align="center">
+  <img src="./Screenshot 2025-06-01 173303.png" alt="Wallet Persona Analyzer Main Dashboard" width="800"/>
+  <p><em>Main dashboard showing comprehensive wallet analysis with AI-generated persona</em></p>
+</div>
 
 ### Key Differentiators
 
 **AI-Powered Analysis**: Integration with Google Gemini AI provides intelligent pattern recognition and behavioral analysis beyond traditional on-chain metrics.
 
-**Comprehensive Data Sources**: Leverages Moralis API ecosystem for extensive blockchain data including transactions, token balances, NFT holdings, DeFi positions, and cross-chain activity.
+**Personalized NFT Recommendations**: Advanced recommendation engine that analyzes user behavior, market trends, and AI insights to suggest personalized NFT collections tailored to individual preferences and risk profiles.
 
-**Advanced Visualization**: Modern React-based dashboard with interactive charts, timelines, and dynamic data presentation.
+**Comprehensive Data Sources**: Leverages Moralis API ecosystem and OpenSea API for extensive blockchain data including transactions, token balances, NFT holdings, DeFi positions, and cross-chain activity.
 
-**Predictive Intelligence**: AI-generated recommendations, risk assessments, and investment insights based on historical behavior patterns.
+**Advanced Visualization**: Modern React-based dashboard with interactive charts, timelines, NFT portfolio analysis, and dynamic recommendation displays.
+
+**Predictive Intelligence**: AI-generated recommendations, risk assessments, and investment insights based on historical behavior patterns and market analysis.
 
 **Multi-Modal Personas**: Creates personalized avatars with voice narration, detailed biographies, and visual representations.
 
-**Real-Time Analysis**: Live data processing with intelligent caching for optimal performance.
+**Real-Time Analysis**: Live data processing with intelligent caching for optimal performance and up-to-date market data.
 
 ---
 
 ## Core Features
+
+### Advanced NFT Recommendation Engine
+
+**Intelligent Recommendation System**
+- Multi-algorithm approach combining behavioral analysis, collaborative filtering, and content-based recommendations
+- AI-powered market trend analysis and collection insights
+- Personalized suggestions based on wallet history, risk tolerance, and investment patterns
+- Real-time market data integration from OpenSea, NFTPort, and Alchemy APIs
+- Budget-aware recommendations with customizable price ranges
+- Risk-adjusted suggestions matching user trading profiles
+
+<div align="center">
+  <img src="./Screenshot 2025-06-01 173312.png" alt="NFT Recommendation Engine" width="700"/>
+  <p><em>AI-powered NFT recommendations with detailed market analysis and personalized insights</em></p>
+</div>
+
+**NFT Portfolio Analysis**
+- Comprehensive collection evaluation including rarity metrics and floor price analysis
+- Trading pattern recognition (flipping vs. holding strategies)
+- Portfolio diversification assessment across different NFT categories
+- Market performance tracking and trend identification
+- Cross-marketplace activity analysis and arbitrage opportunity detection
+
+<div align="center">
+  <img src="./Screenshot 2025-06-01 173319.png" alt="NFT Portfolio Analysis" width="700"/>
+  <p><em>Detailed NFT collection analysis with market trends and trading patterns</em></p>
+</div>
+
+**Market Intelligence Integration**
+- Real-time floor price monitoring and volume analysis
+- Trend detection for emerging collections and market opportunities
+- Category-based analysis (PFP, Art, Gaming, Metaverse, Utility)
+- Community strength metrics and holder behavior analysis
+- Price prediction models based on historical data and market patterns
 
 ### Wallet Categorization Engine
 
@@ -65,6 +110,7 @@ The system employs a sophisticated categorization algorithm that analyzes transa
 - Cross-marketplace activity tracking
 - Sentiment analysis based on collection choices
 - Portfolio valuation and trend identification
+- **NEW**: Personalized NFT recommendations based on existing collection patterns
 
 **Active Trader Detection**
 - High-frequency trading pattern analysis
@@ -161,12 +207,22 @@ The final risk score (0-100 scale) combines:
 - Asset correlation analysis
 - Rebalancing recommendations
 
+<div align="center">
+  <img src="./Screenshot 2025-06-01 173331.png" alt="Asset Distribution Dashboard" width="700"/>
+  <p><em>Interactive asset distribution charts with portfolio optimization insights</em></p>
+</div>
+
 **Transaction Journey Timeline**
 - Chronological transaction visualization
 - Key event identification and marking
 - Interactive drill-down capabilities
 - Pattern recognition highlights
 - Contextual transaction analysis
+
+<div align="center">
+  <img src="./Screenshot 2025-06-01 173339.png" alt="Wallet Journey Timeline" width="700"/>
+  <p><em>Comprehensive wallet journey timeline showing transaction history and key events</em></p>
+</div>
 
 **Activity Heatmap Generation**
 - Geographic activity inference
@@ -190,6 +246,11 @@ The final risk score (0-100 scale) combines:
 - Custom artwork creation using advanced image generation APIs
 - Avatar evolution based on changing behavior patterns
 
+<div align="center">
+  <img src="./Screenshot 2025-06-01 173413.png" alt="AI-Generated Persona Profile" width="700"/>
+  <p><em>AI-generated persona with detailed behavioral analysis and investment insights</em></p>
+</div>
+
 **Voice Narration System**
 - Text-to-speech integration using ElevenLabs API
 - Personalized voice selection based on persona traits
@@ -202,6 +263,11 @@ The final risk score (0-100 scale) combines:
 - Risk tolerance assessment
 - Market outlook prediction
 - Behavioral psychology analysis
+
+<div align="center">
+  <img src="./Screenshot 2025-06-01 173422.png" alt="Detailed Analysis Dashboard" width="700"/>
+  <p><em>Comprehensive analysis dashboard with risk assessment and trading behavior insights</em></p>
+</div>
 
 **Behavioral Insight Engine**
 - Trading psychology evaluation
@@ -224,6 +290,8 @@ wallet-persona-frontend/
 │   │   ├── BasicWalletInfo.js          # Address validation and basic metrics
 │   │   ├── DetailedAnalysisSection.js  # Risk assessment and trading analysis
 │   │   ├── NftAnalysisSection.js       # NFT portfolio and collection analysis
+│   │   ├── NFTRecommendationSection.js # Personalized NFT recommendations display
+│   │   ├── NftRecommendations/         # NFT recommendation components directory
 │   │   ├── AssetDistributionChart.js   # Token allocation and diversification
 │   │   ├── WalletJourneyTimeline.js    # Transaction history and key events
 │   │   ├── DeFiSummarySection.js       # DeFi positions and protocol analysis
@@ -246,10 +314,13 @@ src/
 │   ├── WalletPersonaService.ts        # Persona generation orchestration
 │   ├── GeminiAIService.ts            # AI analysis and pattern recognition
 │   ├── TransactionAnalyzerService.ts  # Transaction pattern analysis engine
+│   ├── NFTRecommendationService.ts   # Advanced NFT recommendation algorithms
+│   ├── OpenSeaService.ts             # OpenSea API integration for NFT data
 │   ├── ImageGenerationService.ts     # Avatar image creation service
 │   └── ElevenLabsService.ts          # Voice synthesis integration
 ├── types/
-│   └── wallet.types.ts               # Comprehensive TypeScript interfaces
+│   ├── wallet.types.ts               # Comprehensive TypeScript interfaces
+│   └── opensea.types.ts              # OpenSea-specific type definitions
 ├── server.ts                         # Express server configuration and routing
 └── index.ts                          # Application entry point and initialization
 ```
@@ -264,12 +335,25 @@ src/
 - DeFi position tracking
 - Real-time price feeds
 
+**OpenSea API Integration**
+- NFT collection metadata and floor prices
+- Real-time market data and sales history
+- Collection statistics and trending analysis
+- Cross-marketplace data aggregation
+- Rarity and trait information
+
+**NFTPort & Alchemy API Integration**
+- Enhanced NFT metadata and analytics
+- Collection performance metrics
+- Market trend analysis and predictions
+- Advanced NFT portfolio insights
+
 **Google Gemini AI Integration**
 - Advanced pattern recognition
 - Natural language generation
 - Behavioral analysis
 - Risk assessment modeling
-- Recommendation generation
+- NFT recommendation generation
 
 **ElevenLabs Voice Synthesis**
 - High-quality text-to-speech conversion
@@ -356,26 +440,52 @@ Create a `.env` file in the project root directory:
 MORALIS_API_KEY=your_moralis_api_key_here
 GEMINI_API_KEY=your_gemini_api_key_here
 
+# NFT Data APIs (Required for NFT Recommendations)
+OPENSEA_API_KEY=your_opensea_api_key_here
+NFTPORT_API_KEY=your_nftport_api_key_here
+ALCHEMY_API_KEY=your_alchemy_api_key_here
+
 # Server Configuration
 PORT=3001
 NODE_ENV=development
+CORS_ORIGIN=http://localhost:3000
 
 # Blockchain Configuration
 RPC_URL=https://ethereum-rpc.publicnode.com
 DEFAULT_CHAIN=eth
+SUPPORTED_CHAINS=eth,polygon,bsc,arbitrum
 
-# Optional AI Features
+# AI Model Configuration
+GEMINI_MODEL=gemini-1.5-pro
+GEMINI_TEMPERATURE=0.7
+GEMINI_MAX_TOKENS=8192
+AI_CACHE_DURATION=3600
+
+# Optional AI Enhancement APIs
 IMAGE_API_KEY=your_image_generation_api_key
 ELEVENLABS_API_KEY=your_elevenlabs_api_key
+ELEVENLABS_VOICE_ID=default_voice_id
 
 # Performance Configuration
-CACHE_DURATION=3600
-MAX_CONCURRENT_REQUESTS=10
-REQUEST_TIMEOUT=30000
+CACHE_DURATION=1800
+MAX_CONCURRENT_REQUESTS=25
+REQUEST_TIMEOUT=45000
+RATE_LIMIT_WINDOW=900000
+RATE_LIMIT_MAX=100
 
-# Debug Configuration
-DEBUG=false
+# Database Configuration (Optional)
+DATABASE_URL=postgresql://user:password@localhost:5432/wallet_persona
+REDIS_URL=redis://localhost:6379
+
+# Logging Configuration
 LOG_LEVEL=info
+LOG_FORMAT=json
+ENABLE_REQUEST_LOGGING=true
+
+# Security Configuration
+API_KEY_ROTATION_INTERVAL=604800
+ENABLE_ANALYTICS=true
+ANALYTICS_SAMPLE_RATE=0.1
 ```
 
 **5. Development Server Startup**
@@ -522,6 +632,20 @@ Generates a comprehensive persona analysis for an Ethereum wallet address.
     "bio": "AI-generated biography describing trading behavior and investment strategy",
     "avatarName": "CryptoSage",
     "avatarImageUrl": "data:image/png;base64,...",
+    "nftRecommendations": [
+      {
+        "contractAddress": "string",
+        "collectionName": "string",
+        "floorPrice": "number",
+        "volume24h": "number",
+        "priceChange24h": "number",
+        "recommendationScore": "number",
+        "recommendationReason": "string",
+        "category": "trending | similar_style | undervalued | blue_chip | emerging",
+        "riskLevel": "low | medium | high",
+        "aiInsight": "string"
+      }
+    ],
     "recommendations": {
       "tokens": ["USDC", "WETH"],
       "dapps": ["Uniswap", "Compound"],
@@ -622,6 +746,11 @@ analyzeWallet('0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045')
   .catch(error => console.error('Error:', error));
 ```
 
+<div align="center">
+  <img src="./Screenshot 2025-06-01 173405.png" alt="Basic Wallet Information Display" width="700"/>
+  <p><em>Basic wallet information with balance, tokens, and transaction statistics</em></p>
+</div>
+
 ### Advanced Metrics Extraction
 
 **Risk Assessment Analysis**
@@ -653,6 +782,40 @@ const extractRiskAnalysis = (walletData) => {
   
   return { riskAnalysis, portfolioAnalysis };
 };
+```
+
+**NFT Recommendation Analysis**
+```javascript
+const analyzeNFTRecommendations = (nftRecommendations) => {
+  if (!nftRecommendations || nftRecommendations.length === 0) return null;
+  
+  const analysis = {
+    totalRecommendations: nftRecommendations.length,
+    categories: {},
+    riskDistribution: {},
+    priceRange: {
+      min: Math.min(...nftRecommendations.map(r => r.floorPrice)),
+      max: Math.max(...nftRecommendations.map(r => r.floorPrice)),
+      average: nftRecommendations.reduce((sum, r) => sum + r.floorPrice, 0) / nftRecommendations.length
+    },
+    topRecommendations: nftRecommendations
+      .sort((a, b) => b.recommendationScore - a.recommendationScore)
+      .slice(0, 3)
+  };
+  
+  // Group by category and risk level
+  nftRecommendations.forEach(rec => {
+    analysis.categories[rec.category] = (analysis.categories[rec.category] || 0) + 1;
+    analysis.riskDistribution[rec.riskLevel] = (analysis.riskDistribution[rec.riskLevel] || 0) + 1;
+  });
+  
+  return analysis;
+};
+
+// Usage example
+const walletData = await analyzeWallet('0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045');
+const nftAnalysis = analyzeNFTRecommendations(walletData.persona.nftRecommendations);
+console.log('NFT Recommendations Analysis:', nftAnalysis);
 ```
 
 **DeFi Position Analysis**
@@ -739,6 +902,11 @@ const createAssetDistributionChart = (tokens, canvasId) => {
 };
 ```
 
+<div align="center">
+  <img src="./Screenshot 2025-06-01 173436.png" alt="Advanced Visualization Features" width="700"/>
+  <p><em>Interactive charts and advanced visualization components for portfolio analysis</em></p>
+</div>
+
 ---
 
 ## AI Integration
@@ -759,14 +927,23 @@ The application leverages Google's Gemini AI for sophisticated analysis beyond t
 - Contextual risk factor identification that adapts to market conditions and protocol-specific risks
 - Integration with real-time security databases for fraud and scam detection
 
+**NFT Recommendation Intelligence**
+- Analyzes user's NFT collection patterns and trading behavior to understand aesthetic preferences
+- Generates personalized collection suggestions based on risk tolerance and investment patterns
+- Provides market timing insights for NFT purchases and sales
+- Creates detailed reasoning for each recommendation with market context and trend analysis
+- Predicts collection performance based on community strength, utility, and market dynamics
+
 **Natural Language Persona Generation**
 - Generates human-readable personality descriptions based on complex on-chain behavior analysis
 - Extracts personality traits from trading patterns, risk tolerance from position sizing, and investment philosophy from asset selection
 - Creates contextual investment psychology profiles that explain motivation behind trading decisions
+- Produces detailed NFT collection insights and personalized recommendation narratives
 
 **Intelligent Recommendation System**
 - Personalized token suggestions based on historical preferences, risk profile, and portfolio optimization principles
 - DApp recommendations that align with user behavior patterns and complement existing DeFi positions
+- NFT collection recommendations with detailed market analysis and timing insights
 - Educational content curation tailored to user's current knowledge level and areas of interest
 
 ### AI Configuration and Customization
@@ -780,6 +957,57 @@ export GEMINI_API_KEY="your_gemini_api_key_here"
 GEMINI_MODEL="gemini-1.5-pro"
 GEMINI_TEMPERATURE=0.7
 GEMINI_MAX_TOKENS=8192
+
+# NFT Recommendation APIs
+export OPENSEA_API_KEY="your_opensea_api_key_here"
+export NFTPORT_API_KEY="your_nftport_api_key_here"
+export ALCHEMY_API_KEY="your_alchemy_api_key_here"
+```
+
+**Custom NFT Recommendation Configuration**
+```typescript
+// Example: Custom NFT recommendation preferences
+interface NFTPreferenceProfile {
+  preferredCategories: string[];
+  avgPurchasePrice: number;
+  riskTolerance: 'conservative' | 'moderate' | 'aggressive';
+  tradingFrequency: 'holder' | 'flipper' | 'mixed';
+  favoriteMarketplaces: string[];
+  preferredArtStyles: string[];
+  budgetRange: { min: number; max: number };
+  timeHorizon: 'short' | 'medium' | 'long';
+}
+
+// Implementation in NFTRecommendationService.ts
+export class NFTRecommendationService {
+  async generateNFTRecommendations(
+    walletDetails: WalletDetails,
+    preferences?: Partial<NFTPreferenceProfile>
+  ): Promise<NFTRecommendation[]> {
+    // Multi-algorithm approach combining:
+    // 1. Behavioral analysis
+    // 2. Collaborative filtering
+    // 3. Content-based recommendations
+    // 4. AI-powered market insights
+    
+    const userProfile = await this.analyzeUserNFTProfile(walletDetails);
+    const mergedPreferences = { ...userProfile, ...preferences };
+    
+    const [trendingRecs, similarStyleRecs, undervaluedRecs, aiPoweredRecs] = await Promise.all([
+      this.getTrendingRecommendations(mergedPreferences),
+      this.getSimilarStyleRecommendations(walletDetails.nfts, mergedPreferences),
+      this.getUndervaluedRecommendations(mergedPreferences),
+      this.getAIPoweredRecommendations(walletDetails, mergedPreferences)
+    ]);
+    
+    return this.deduplicateAndScore([
+      ...trendingRecs,
+      ...similarStyleRecs,
+      ...undervaluedRecs,
+      ...aiPoweredRecs
+    ], mergedPreferences);
+  }
+}
 ```
 
 **Custom Analysis Prompts**
@@ -841,6 +1069,11 @@ export class GeminiAIService {
 # Core API Keys (Required)
 MORALIS_API_KEY=your_moralis_api_key_here
 GEMINI_API_KEY=your_gemini_api_key_here
+
+# NFT Data APIs (Required for NFT Recommendations)
+OPENSEA_API_KEY=your_opensea_api_key_here
+NFTPORT_API_KEY=your_nftport_api_key_here
+ALCHEMY_API_KEY=your_alchemy_api_key_here
 
 # Server Configuration
 PORT=3001
@@ -970,9 +1203,11 @@ export const TEST_WALLETS = {
   VITALIK_BUTERIN: '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045',
   DEFI_WHALE: '0x47ac0Fb4F2D84898e4D9E7b4DaB3C24507a6D503',
   
-  // NFT Collectors
+  // NFT Collectors (Great for testing NFT recommendations)
   PRANKSY: '0xd387a6e4e84a6c86bd90c158c6028a58cc8ac459',
   NFT_FLIPPER: '0x54be3a794282c030b15e43ae2bb182e14c409c5e',
+  WHALE_COLLECTOR: '0x2e675eeae4747c248bfddbafaa3a8a2fdddaa44b',
+  BLUE_CHIP_COLLECTOR: '0xc6b0562605d35ee710138402b878ffe6f2e23807',
   
   // Active Traders
   MEV_BOT: '0x0000000000007F150Bd6f54c40A34d7C3d5e9f56',
@@ -984,7 +1219,10 @@ export const TEST_WALLETS = {
   
   // DAO Participants
   DAO_MEMBER: '0xc0ffee254729296a45a3885639AC7E10F9d54979',
-  GOVERNANCE_WHALE: '0x1a9c8182c09f50c8318d769245bea52c32be35bc'
+  GOVERNANCE_WHALE: '0x1a9c8182c09f50c8318d769245bea52c32be35bc',
+  
+  // Mixed Profile (Good for comprehensive testing)
+  DIVERSE_TRADER: '0x9c5083dd4838e120dbeac44c052179692aa5dac5'
 };
 ```
 
